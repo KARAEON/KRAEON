@@ -119,141 +119,9 @@ const sourceFeatures = {
 
 
 const facilityFeatures = {
-
   type: "FeatureCollection",
-
-
-
-  features: [
-
-    {
-
-      type: "Feature",
-
-
-
-      properties: {
-
-        id: "school-1",
-
-        name: "Sample School A",
-
-        category: "School",
-
-        zone: "Zone A",
-
-      },
-
-
-
-      geometry: {
-
-        type: "Point",
-
-        coordinates: [124.9, 11.7905],
-
-      },
-
-    },
-
-
-
-    {
-
-      type: "Feature",
-
-
-
-      properties: {
-
-        id: "school-2",
-
-        name: "Sample School B",
-
-        category: "School",
-
-        zone: "Zone A",
-
-      },
-
-
-
-      geometry: {
-
-        type: "Point",
-
-        coordinates: [124.8925, 11.7825],
-
-      },
-
-    },
-
-
-
-    {
-
-      type: "Feature",
-
-
-
-      properties: {
-
-        id: "health-1",
-
-        name: "Sample Health Center",
-
-        category: "Health",
-
-        zone: "Zone A",
-
-      },
-
-
-
-      geometry: {
-
-        type: "Point",
-
-        coordinates: [124.8865, 11.7765],
-
-      },
-
-    },
-
-
-
-    {
-
-      type: "Feature",
-
-
-
-      properties: {
-
-        id: "government-1",
-
-        name: "Sample Government Facility",
-
-        category: "Government",
-
-        zone: "Zone A",
-
-      },
-
-
-
-      geometry: {
-
-        type: "Point",
-
-        coordinates: [124.8815, 11.779],
-
-      },
-
-    },
-
-  ],
-
+  // Source counts are shown in Public welfare; synthetic sample points are not mapped.
+  features: [],
 };
 
 
@@ -293,41 +161,9 @@ const householdCoordinates = [
 
 
 const householdFeatures = {
-
   type: "FeatureCollection",
-
-
-
-  features: householdCoordinates.map((coordinates, index) => ({
-
-    type: "Feature",
-
-
-
-    properties: {
-
-      id: `household-${index + 1}`,
-
-      name: `Sample Household ${index + 1}`,
-
-      category: "Household",
-
-      zone: "Zone A",
-
-    },
-
-
-
-    geometry: {
-
-      type: "Point",
-
-      coordinates,
-
-    },
-
-  })),
-
+  // Census totals are citywide and do not represent geocoded household locations.
+  features: [],
 };
 
 
@@ -2626,6 +2462,7 @@ const assets = developmentAssets.assets;
         showDependencyArea={showDependencyArea}
         onToggleOutage={() => setOutage((previous) => !previous)}
         onBarangaySelect={selectBarangayRecord}
+        lguKey={requestedLgu}
       />
 
 

@@ -106,6 +106,21 @@ const publicItems = [
 
 ];
 
+const publicInventory = {
+  catbalogan: {
+    households: { value: "23,107", detail: "households | 2020 census", source: "PSA Region VIII", href: "https://rsso08.psa.gov.ph/system/files/publication/2023%20Regional%20Social%20and%20Economic%20Trends%20-%20Eastern%20Visayas.pdf" },
+    health: { value: "2", detail: "hospitals | 2024", source: "PSA Region VIII", href: "https://rsso08.psa.gov.ph/system/files/publication/CSW-202501-0800-03.pdf" },
+    schools: { value: "58", detail: "schools | DepEd inventory", source: "DepEd NID", href: "https://nid.deped.gov.ph/public-dashboard/region/Region%20VIII/division/Catbalogan%20City" },
+    government: { value: "Directory", detail: "city offices listed", source: "Catbalogan LGU", href: "https://catbalogancity.gov.ph/city-offices/" },
+  },
+  calbayog: {
+    households: { value: "43,030", detail: "households | 2020 census", source: "PSA Region VIII", href: "https://rsso08.psa.gov.ph/system/files/publication/2023%20Regional%20Social%20and%20Economic%20Trends%20-%20Eastern%20Visayas.pdf" },
+    health: { value: "3", detail: "hospitals | 2024", source: "PSA Region VIII", href: "https://rsso08.psa.gov.ph/system/files/publication/CSW-202501-0800-03.pdf" },
+    schools: { value: "174", detail: "schools | DepEd inventory", source: "DepEd NID", href: "https://www.nid.deped.gov.ph/public-dashboard/region/Region%20VIII/division/Calbayog%20City" },
+    government: { value: "Directory", detail: "city offices listed", source: "Calbayog LGU", href: "https://calbayog.gov.ph/lgu-directory/" },
+  },
+};
+
 
 
 const sectorItems = [
@@ -162,6 +177,7 @@ export default function MissionControlSidebar({
   onToggleOutage,
 
   onBarangaySelect,
+  lguKey,
 
 }) {
 
@@ -560,6 +576,18 @@ export default function MissionControlSidebar({
 
                     ))}
 
+                  </div>
+
+                  <div className="mc-public-inventory">
+                    <strong>Citywide public inventory</strong>
+                    <p>Source totals are citywide, not counts of pins in the visible map area.</p>
+                    {publicItems.map(({ key, label }) => {
+                      const record = publicInventory[lguKey]?.[key];
+                      return <div className="mc-public-inventory-row" key={key}>
+                        <span>{label}</span>
+                        {record ? <><b>{record.value}</b><small>{record.detail} | <a href={record.href} target="_blank" rel="noreferrer">{record.source} (source)</a></small></> : <small>Published citywide total not available</small>}
+                      </div>;
+                    })}
                   </div>
 
                 </Workspace>
