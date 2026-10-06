@@ -515,10 +515,6 @@ body[data-appearance="night"]{background-image:linear-gradient(rgba(25,22,30,.84
 .municipal-profile-head>span{color:#9860d5!important;font-size:9px!important;letter-spacing:.12em!important}
 .municipal-profile-head h3{font-size:21px!important}
 .municipal-profile-head p{font-size:9px!important}
-.profile-gis-link{display:flex;align-items:center;justify-content:center;gap:9px;min-height:44px;margin:12px 0 2px;padding:0 14px;border:1px solid #8f55d2;border-radius:9px;background:#8f55d2;color:#fff;font-size:12px;font-weight:750;letter-spacing:.045em;text-decoration:none;box-shadow:0 5px 14px rgba(82,49,111,.16);transition:background .16s ease,border-color .16s ease,transform .16s ease}
-.profile-gis-link svg:last-child{margin-left:auto}
-.profile-gis-link:hover{transform:translateY(-1px);border-color:#7942bb;background:#7942bb}
-.profile-gis-link:focus-visible{outline:3px solid rgba(143,85,210,.35);outline-offset:2px}
 .profile-statuses{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0;border-bottom:1px solid var(--divider)}
 .profile-status{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid rgba(92,79,104,.14);border-radius:999px;background:rgba(255,255,255,.56);color:#63596b;font-size:8px}
 .profile-status b{color:#342b3a;font-size:8px}.profile-status small{color:#8b8290;font-size:7px;letter-spacing:.04em}

@@ -1087,7 +1087,7 @@ export default function App() {
 
             <div className={`planning-workspace layout-${exploreLayout}`}>
               {exploreLayout !== "planning-expanded" && <section className="planning-map">
-                <SectionHeading icon={MapPin} title="Samar" detail={exploreLayout === "map-expanded" ? "Municipality explorer" : undefined} onClick={() => setExploreLayout(exploreLayout === "map-expanded" ? "split" : "map-expanded")} actionLabel={exploreLayout === "map-expanded" ? "Return to split view" : "Expand Samar map"} />
+                <SectionHeading icon={MapPin} title="Samar" detail={exploreLayout === "map-expanded" ? "Municipality explorer" : undefined} onClick={() => setExploreLayout(exploreLayout === "map-expanded" ? "split" : "map-expanded")} actionLabel={exploreLayout === "map-expanded" ? "Return to split view" : "Expand Samar map"} actionHref={exploreLayout === "map-expanded" ? `./gis.html?lgu=${encodeURIComponent(spatialMunicipality.id)}` : undefined} actionLinkText={exploreLayout === "map-expanded" ? "VIEW MAP IN GIS" : undefined} />
                 <div className="map-key" aria-label="Map legend">
                   <span><i className="active-key" />Pilot LGU</span>
                   <span><i />Other municipality</span>
@@ -1147,11 +1147,6 @@ export default function App() {
 
               {exploreLayout === "map-expanded" && <aside className="explore-detail-rail municipal-profile">
                 <header className="municipal-profile-head"><span>DEMOGRAPHICS / MAP</span><h3>{spatialMunicipality.name}</h3><p>Municipal profile · shared live simulation state</p></header>
-                <a className="profile-gis-link" href={`./gis.html?lgu=${encodeURIComponent(spatialMunicipality.id)}`}>
-                  <MapPin size={16}/>
-                  VIEW MAP IN GIS
-                  <ArrowUpRight size={15}/>
-                </a>
                 <div className="profile-statuses" aria-label="Municipal service conditions">
                   <span className={`profile-status stress-${waterStress.toLowerCase()}`}>Water stress <b>{waterStress}</b></span>
                   <span className={`profile-status affordability-${affordability.toLowerCase()}`}>Affordability <b>{affordability}</b></span>
