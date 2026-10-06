@@ -246,7 +246,7 @@ export default function MissionControlSidebar({
 
           type="button"
 
-          title="Water Economy"
+          title="DULOY"
 
           onClick={() => setRailCollapsed((v) => !v)}
 
@@ -374,11 +374,11 @@ export default function MissionControlSidebar({
 
               <div>
 
-                <div className="mc-kicker">WATER ECONOMY OS</div>
+                <div className="mc-kicker">DULOY</div>
 
-                <h1>Mission Control</h1>
+                <h1>DULOY</h1>
 
-                <p>AI + GIS planning simulator</p>
+                <p>Water Economy Decision System</p>
 
               </div>
 

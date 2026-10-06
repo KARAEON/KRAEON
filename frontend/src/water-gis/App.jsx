@@ -2489,7 +2489,7 @@ const assets = developmentAssets.assets;
 
             <h2>
 
-              Water Dependency Map
+              DULOY | Water Dependency Map
 
             </h2>
 
