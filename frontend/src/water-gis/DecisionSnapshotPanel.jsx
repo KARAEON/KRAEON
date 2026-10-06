@@ -94,7 +94,7 @@ export default function DecisionSnapshotPanel({
     } catch (err) {
       setError(
         err?.message ||
-          "Unable to generate DALOY insight."
+          "Unable to generate DULOY AI insight."
       );
     } finally {
       setAiLoading(false);
@@ -287,10 +287,10 @@ export default function DecisionSnapshotPanel({
           />
 
           {aiLoading
-            ? "DALOY is rewriting..."
+            ? "DULOY AI is rewriting..."
             : ai
               ? "Rewrite Again"
-              : "Rewrite with DALOY"}
+              : "Rewrite with DULOY AI"}
         </button>
       </div>
 
@@ -302,7 +302,7 @@ export default function DecisionSnapshotPanel({
         <span>
           Calculation engine decides
           the structured result first.
-          DALOY only rewrites and
+          DULOY AI only rewrites and
           explains it.
         </span>
       </div>

@@ -57,7 +57,7 @@ export default function LGUDataPanel({ onBarangaySelect, activeBarangay }) {
       <div className="lgu-panel-header">
         <div className="panel-icon">◈</div>
         <div>
-          <h2>Water Economy Intelligence</h2>
+          <h2>DULOY Data Intelligence</h2>
           <p>Barangay-level water and economic decision support</p>
         </div>
       </div>

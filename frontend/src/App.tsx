@@ -447,7 +447,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `water-economics-${scope}.csv`;
+    a.download = `DULOY-${scope}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     inform("Simulation results exported.");
@@ -471,8 +471,8 @@ export default function App() {
             <Droplets size={25} />
           </span>
           <span>
-            water<span className="brand-light">economics</span>
-            <small>Samar planning studio</small>
+            DULOY
+            <small>Samar Water Decision System</small>
           </span>
         </a>
         <div className="header-end">
@@ -1588,9 +1588,9 @@ export default function App() {
           </span>
         </footer>
       </main>
-      {page === "Simulation" && <aside className={`daloy-assistant ${daloyOpen ? "open" : ""}`} aria-label="DALOY scenario assistant">
+      {page === "Simulation" && <aside className={`daloy-assistant ${daloyOpen ? "open" : ""}`} aria-label="DULOY AI scenario assistant">
         {daloyOpen && <section className="daloy-panel">
-          <header><span><Sparkles size={15}/> DALOY <small>LIVE SCENARIO READING</small></span><button className="icon-button" aria-label="Close DALOY" onClick={() => setDaloyOpen(false)}><X size={17}/></button></header>
+          <header><span><Sparkles size={15}/> DULOY AI <small>LIVE SCENARIO READING</small></span><button className="icon-button" aria-label="Close DULOY AI" onClick={() => setDaloyOpen(false)}><X size={17}/></button></header>
           <p className="daloy-prompt">Ask about {spatialMunicipality.name}</p>
           <div className="daloy-questions">{daloyQuestions.map((question) => <button key={question} className={daloyQuestion === question ? "selected" : ""} onClick={() => selectDaloyQuestion(question)}>{question}<ArrowRight size={13}/></button>)}</div>
           {daloyQuestion && <div className="daloy-answer" aria-live="polite">
@@ -1608,7 +1608,7 @@ export default function App() {
             <small>Computed directly from the current scenario inputs; no extra AI estimate.</small>
           </div>}
         </section>}
-        <button className="daloy-launcher" onClick={() => setDaloyOpen((open) => !open)} aria-expanded={daloyOpen} aria-label={daloyOpen ? "Close scenario interpretation" : "Interpret scenario with DALOY"}><Sparkles size={16}/>{daloyOpen ? "Close interpretation" : "Interpret scenario"}</button>
+        <button className="daloy-launcher" onClick={() => setDaloyOpen((open) => !open)} aria-expanded={daloyOpen} aria-label={daloyOpen ? "Close scenario interpretation" : "Interpret scenario with DULOY AI"}><Sparkles size={16}/>{daloyOpen ? "Close interpretation" : "Interpret scenario"}</button>
       </aside>}
       {notice && (
         <div className="toast" role="status">

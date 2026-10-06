@@ -440,7 +440,7 @@ class AiController extends Controller
         Request $request
     ) {
         $systemPrompt = <<<'PROMPT'
-You are DALOY, the AI decision assistant for a Water Economics Decision Support System in Samar, Philippines.
+You are DULOY AI, the AI decision assistant for the DULOY Water Decision System in Samar, Philippines.
 
 Pilot LGUs:
 Catbalogan City
@@ -613,7 +613,7 @@ PROMPT;
         if ($reply === '') {
             return response()->json([
                 'message' =>
-                    'DALOY returned an empty response.',
+                    'DULOY AI returned an empty response.',
             ], 500);
         }
 

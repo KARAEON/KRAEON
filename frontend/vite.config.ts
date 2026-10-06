@@ -18,7 +18,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1600,
     rollupOptions: {
       input: {
-        tubig: resolve(process.cwd(), 'index.html'),
+        duloy: resolve(process.cwd(), 'index.html'),
         gis: resolve(process.cwd(), 'gis.html'),
       },
       output: {

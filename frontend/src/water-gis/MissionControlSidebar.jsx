@@ -374,11 +374,11 @@ export default function MissionControlSidebar({
 
               <div>
 
-                <div className="mc-kicker">DULOY</div>
+                <div className="mc-kicker">WATER DECISION SYSTEM</div>
 
                 <h1>DULOY</h1>
 
-                <p>Water Economy Decision System</p>
+                <p>Decision support for Samar LGUs</p>
 
               </div>
 

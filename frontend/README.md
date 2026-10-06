@@ -1,10 +1,10 @@
-# Water Economics
+# DULOY
 
 A visualization-first frontend prototype for water planning in Catbalogan City, Pinabacdao, and Calbayog. React, TypeScript, Vite, React Three Fiber / Three.js, and D3 geographic projection.
 
 ## Run locally
 
-The integration keeps this Tubig interface in `frontend` and uses the Laravel water economy database and API in `backend`. Start both services in separate terminals.
+The DULOY interface is in `frontend` and uses the Laravel water economy database and API in `backend`. Start both services in separate terminals.
 
 Backend terminal:
 
@@ -19,7 +19,7 @@ php artisan migrate --seed
 php artisan serve --host 127.0.0.1 --port 8000
 ```
 
-Add a `GROQ_API_KEY` to `backend/.env` to enable DALOY's AI responses. The backend database and calculated barangay indicators still load without the AI key.
+Add a `GROQ_API_KEY` to `backend/.env` to enable DULOY AI responses. The backend database and calculated barangay indicators still load without the AI key.
 
 Frontend terminal:
 
@@ -44,7 +44,7 @@ npm.cmd test
 4. Save a named scenario, then compare it under Scenarios.
 5. Open Spatial view to see active pilot boundaries. Inactive municipalities are excluded from calculations.
 6. Edit sector demand and household income in Data; export the current calculated results as CSV.
-7. Open **Water GIS** in the top bar to explore the infrastructure map, service zones, barangays, and map-based DALOY tools from the current project.
+7. Open **Water GIS** in the top bar to explore the infrastructure map, service zones, barangays, and map-based DULOY AI tools from the current project.
 
 ## Important model details
 
@@ -52,7 +52,7 @@ This is a **single-day deterministic simulation**, not forecasting. Daily rates 
 
 The immutable baseline factory seeds 76 ML/day supply and 85 ML/day demand, a 9 ML/day inflow gap. Opening storage covers that baseline gap. Supply gap and actual unmet demand are deliberately separate indicators. The methodology view explains every calculation, including household assistance and affordability.
 
-Tubig's local scenario values are **demonstration data, not official LGU statistics**. Calbayog's provider uses a configurable placeholder because the brief's Calbiga/Calbayog relationship is unverified. Supplemental supply illustrates a possible configurable partnership and does not assert a real service relationship. Backend barangay records include their own data status and calculated indicators. Forecasting remains disabled.
+DULOY's local scenario values are **demonstration data, not official LGU statistics**. Calbayog's provider uses a configurable placeholder because the brief's Calbiga/Calbayog relationship is unverified. Supplemental supply illustrates a possible configurable partnership and does not assert a real service relationship. Backend barangay records include their own data status and calculated indicators. Forecasting remains disabled.
 
 ## Structure
 
@@ -65,7 +65,7 @@ Tubig's local scenario values are **demonstration data, not official LGU statist
 - `src/App.tsx`: shared scenario state and interactive workspace, comparisons, editable data, methodology.
 - `src/styles.css`: responsive application design.
 
-Tubig scenario copies use browser local storage. The Data page also reads 238 barangay records and calculated states from the Laravel SQLite database. DALOY sends questions and the current simulation summary to the Laravel decision chat, which uses the configured Groq API key. Database indicators and Tubig's simulation are separate models with different units and assumptions; the interface labels those values separately.
+DULOY scenario copies use browser local storage. The Data page also reads 238 barangay records and calculated states from the Laravel SQLite database. The DULOY assistant sends questions and the current simulation summary to the Laravel decision chat, which uses the configured Groq API key. Database indicators and DULOY's simulation are separate models with different units and assumptions; the interface labels those values separately.
 
 ## Geographic attribution
 

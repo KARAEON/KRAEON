@@ -559,7 +559,7 @@ export default function TariffAffordabilityPanel({
 
                   {alert.ai_action && (
                     <span>
-                      DALOY:{" "}
+                      DULOY AI:{" "}
                       {
                         alert.ai_action
                       }
@@ -580,7 +580,7 @@ export default function TariffAffordabilityPanel({
                       size={13}
                     />
 
-                    Ask DALOY
+                    Ask DULOY AI
                   </button>
                 )}
               </div>
@@ -608,7 +608,7 @@ export default function TariffAffordabilityPanel({
         source pressure, affordability,
         sector satisfaction and alerts,
         then makes the newest results
-        available to DALOY.
+        available to DULOY AI.
       </div>
     </div>
   );

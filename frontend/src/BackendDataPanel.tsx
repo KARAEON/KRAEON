@@ -139,7 +139,7 @@ export default function BackendDataPanel({
         <div className="backend-data-title">
           <span className="backend-data-icon"><Database size={17} /></span>
           <div>
-            <h2 id="backend-data-title">Water economy database</h2>
+            <h2 id="backend-data-title">DULOY shared data</h2>
             <p>Shared barangay records used by the GIS data editor.</p>
           </div>
         </div>

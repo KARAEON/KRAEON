@@ -147,7 +147,7 @@ export default function ChatAssistant({
         if (!response.ok) {
           throw new Error(
             data?.message ||
-              "DALOY request failed."
+              "DULOY AI request failed."
           );
         }
 
@@ -176,7 +176,7 @@ export default function ChatAssistant({
             {
               role: "assistant",
               text:
-                `Unable to contact DALOY: ${error.message}`,
+                `Unable to contact DULOY AI: ${error.message}`,
             },
           ]
         );
@@ -248,7 +248,7 @@ export default function ChatAssistant({
 
               <div>
                 <strong>
-                  Ask DALOY
+                  Ask DULOY AI
                 </strong>
                 <span>
                   Decision Assistant
@@ -440,7 +440,7 @@ export default function ChatAssistant({
               placeholder={
                 selectedBarangay
                   ? `Ask about ${selectedBarangay.barangay}...`
-                  : "Ask DALOY..."
+                  : "Ask DULOY AI..."
               }
               onChange={(
                 event
@@ -478,7 +478,7 @@ export default function ChatAssistant({
 
           <div className="daloy-footer-note">
             Calculations happen first.
-            DALOY explains and proposes
+            DULOY AI explains and proposes
             tests. Suggested scenarios
             are previewed before any
             real change.
@@ -497,7 +497,7 @@ export default function ChatAssistant({
           <Sparkles
             size={15}
           />
-          Ask DALOY
+          Ask DULOY AI
         </button>
       )}
     </>

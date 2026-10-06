@@ -363,7 +363,7 @@ export default function NRWSimulatorPanel({
 
                   {alert.ai_action && (
                     <span>
-                      DALOY:{" "}
+                      DULOY AI:{" "}
                       {
                         alert.ai_action
                       }
@@ -384,7 +384,7 @@ export default function NRWSimulatorPanel({
                       size={12}
                     />
 
-                    Ask DALOY
+                    Ask DULOY AI
                   </button>
                 )}
               </div>

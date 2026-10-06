@@ -247,6 +247,8 @@ input {
 .topbar h2 {
   margin: 0;
   font-size: 19px;
+  color: #241b2d;
+  font-weight: 750;
 }
 
 .topbar p {

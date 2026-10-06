@@ -1,4 +1,4 @@
-# Water Economics design direction
+# DULOY design direction
 
 The memorable element is a contained, animated body of water on a miniature infrastructure landscape. Quiet white control surfaces frame the model, leaving it the largest element. Source connections and sector colors explain the water system before charts do.
 

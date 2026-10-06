@@ -2512,8 +2512,8 @@ const assets = developmentAssets.assets;
 
 
           <div className="topbar-badges">
-            <a className="back-main-btn" href="./" aria-label="Back to main economics interface">
-              <span aria-hidden="true">←</span> Back to Main UI
+            <a className="back-main-btn" href="./" aria-label="Back to DULOY main interface">
+              <span aria-hidden="true">←</span> Back to DULOY
             </a>
 
 

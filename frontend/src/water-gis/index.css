@@ -50,6 +50,16 @@
   }
 }
 
+/* The GIS uses a light map and light panels in every OS appearance mode. */
+:root {
+  color-scheme: light;
+  --text: #51445b;
+  --text-h: #241b2d;
+  --bg: #fff;
+  --border: #e5e4e7;
+  --code-bg: #f4f3ec;
+}
+
 body {
   margin: 0;
 }

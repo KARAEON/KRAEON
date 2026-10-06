@@ -62,7 +62,7 @@ class DaloyDecisionController extends Controller
         | GENERAL PILOT-AREA CONTEXT
         |--------------------------------------------------------------------------
         |
-        | This keeps DALOY useful even when no barangay is selected.
+        | This keeps DULOY AI useful even when no barangay is selected.
         |
         */
 
@@ -126,7 +126,7 @@ class DaloyDecisionController extends Controller
                 } catch (\Throwable $error) {
                     /*
                      * One incomplete row should not break
-                     * the entire DALOY assistant.
+                     * the entire DULOY AI assistant.
                      */
                     continue;
                 }
@@ -175,18 +175,18 @@ class DaloyDecisionController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | DALOY SYSTEM INSTRUCTIONS
+        | DULOY AI SYSTEM INSTRUCTIONS
         |--------------------------------------------------------------------------
         */
 
         $system = <<<'PROMPT'
-You are DALOY, the AI Decision Assistant inside a Water Economics Decision Support System.
+You are DULOY AI, the decision assistant inside the DULOY Water Decision System.
 
 ARCHITECTURE:
 User Inputs
 → Calculation Engines
 → Structured Results
-→ DALOY
+→ DULOY AI
 → Explanation / Suggestions
 
 NON-NEGOTIABLE RULES:
@@ -392,7 +392,7 @@ PROMPT;
         } catch (\Throwable $error) {
             return response()->json([
                 'message' =>
-                    'Unable to connect to DALOY.',
+                    'Unable to connect to DULOY AI.',
 
                 'details' =>
                     $error->getMessage(),
@@ -408,7 +408,7 @@ PROMPT;
         if ($response->failed()) {
             return response()->json([
                 'message' =>
-                    'DALOY request failed.',
+                    'DULOY AI request failed.',
 
                 'status' =>
                     $response->status(),
@@ -434,7 +434,7 @@ PROMPT;
         if ($content === '') {
             return response()->json([
                 'message' =>
-                    'DALOY returned an empty response.',
+                    'DULOY AI returned an empty response.',
             ], 502);
         }
 
@@ -819,7 +819,7 @@ PROMPT;
         }
 
         if (count($parts) === 0) {
-            return 'DALOY analyzed the available calculated context, but no concise recommendation was returned.';
+            return 'DULOY AI analyzed the available calculated context, but no concise recommendation was returned.';
         }
 
         return implode(
@@ -897,6 +897,6 @@ PROMPT;
 
     return $cleaned !== ''
         ? $cleaned
-        : 'DALOY analyzed the available information but could not format the response correctly.';
+        : 'DULOY AI analyzed the available information but could not format the response correctly.';
     }
 }
