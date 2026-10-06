@@ -111,7 +111,7 @@ const publicInventory = {
     households: { value: "23,107", detail: "households | 2020 census", source: "PSA Region VIII", href: "https://rsso08.psa.gov.ph/system/files/publication/2023%20Regional%20Social%20and%20Economic%20Trends%20-%20Eastern%20Visayas.pdf" },
     health: { value: "2", detail: "hospitals | 2024", source: "PSA Region VIII", href: "https://rsso08.psa.gov.ph/system/files/publication/CSW-202501-0800-03.pdf" },
     schools: { value: "58", detail: "schools | DepEd inventory", source: "DepEd NID", href: "https://nid.deped.gov.ph/public-dashboard/region/Region%20VIII/division/Catbalogan%20City" },
-    government: { value: "Directory", detail: "city offices listed", source: "Catbalogan LGU", href: "https://catbalogancity.gov.ph/city-offices/" },
+    government: { value: "31", detail: "city offices listed", source: "Catbalogan LGU", href: "https://catbalogancity.gov.ph/city-offices/" },
   },
   calbayog: {
     households: { value: "43,030", detail: "households | 2020 census", source: "PSA Region VIII", href: "https://rsso08.psa.gov.ph/system/files/publication/2023%20Regional%20Social%20and%20Economic%20Trends%20-%20Eastern%20Visayas.pdf" },
@@ -188,6 +188,12 @@ export default function MissionControlSidebar({
   const [dataOpen, setDataOpen] = useState(false);
 
   const [search, setSearch] = useState("");
+
+  const publicInventoryKey = String(lguKey || "catbalogan").toLowerCase().includes("calbayog")
+    ? "calbayog"
+    : String(lguKey || "catbalogan").toLowerCase().includes("pinabacdao")
+      ? "pinabacdao"
+      : "catbalogan";
 
   const selectGisSector = (key) => {
     setAnalysisMode(key);
@@ -560,29 +566,18 @@ export default function MissionControlSidebar({
 
                   <div className="mc-toggle-grid">
 
-                    {publicItems.map(({ key, ...item }) => (
-
-                      <LayerTile
-
-                        key={key}
-
-                        {...item}
-
-                        checked={layers[key]}
-
-                        onClick={() => toggleLayer(key)}
-
-                      />
-
-                    ))}
+                    {publicItems.map(({ key, ...item }) => {
+                      const record = publicInventory[publicInventoryKey]?.[key];
+                      return <LayerTile key={key} {...item} badge={record?.value} checked={layers[key]} onClick={() => toggleLayer(key)} />;
+                    })}
 
                   </div>
 
                   <div className="mc-public-inventory">
                     <strong>Citywide public inventory</strong>
-                    <p>Source totals are citywide, not counts of pins in the visible map area.</p>
+                    <p>Source totals are citywide. Map pins appear only when facility coordinates are verified.</p>
                     {publicItems.map(({ key, label }) => {
-                      const record = publicInventory[lguKey]?.[key];
+                      const record = publicInventory[publicInventoryKey]?.[key];
                       return <div className="mc-public-inventory-row" key={key}>
                         <span>{label}</span>
                         {record ? <><b>{record.value}</b><small>{record.detail} | <a href={record.href} target="_blank" rel="noreferrer">{record.source} (source)</a></small></> : <small>Published citywide total not available</small>}
@@ -655,9 +650,10 @@ export default function MissionControlSidebar({
                   <SectorSnapshot barangay={selectedBarangay} sector={selectedSector} mode={analysisMode} onOpenData={() => setDataOpen(true)} />
                   <div className="mc-subsection-title">Public services</div>
                   <div className="mc-toggle-grid">
-                    {publicItems.filter(({ key }) => key !== "households").map(({ key, ...item }) => (
-                      <LayerTile key={key} {...item} checked={layers[key]} onClick={() => toggleLayer(key)} />
-                    ))}
+                    {publicItems.filter(({ key }) => key !== "households").map(({ key, ...item }) => {
+                      const record = publicInventory[publicInventoryKey]?.[key];
+                      return <LayerTile key={key} {...item} badge={record?.value} checked={layers[key]} onClick={() => toggleLayer(key)} />;
+                    })}
                   </div>
 <LayerTile
 
@@ -916,7 +912,7 @@ function Workspace({ eyebrow, title, description, children }) {
 
 
 
-function LayerTile({ icon: Icon, label, checked, onClick, wide = false }) {
+function LayerTile({ icon: Icon, label, checked, onClick, wide = false, badge }) {
 
   return (
 
@@ -937,6 +933,8 @@ function LayerTile({ icon: Icon, label, checked, onClick, wide = false }) {
       </div>
 
       <span>{label}</span>
+
+      {badge && <small className="mc-layer-badge">{badge}</small>}
 
       <div className={`mc-switch ${checked ? "on" : ""}`}>
 

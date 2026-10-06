@@ -644,10 +644,10 @@ export default function App() {
   const requestedLgu = new URLSearchParams(window.location.search).get("lgu")?.toLowerCase();
   const mapFocus = {
     samar: { center: [124.895, 11.792], zoom: 9.2 },
-    catbalogan: { center: [124.887, 11.776], zoom: 12.3 },
+    catbalogan: { center: [124.907, 11.806], zoom: 11.6 },
     calbayog: { center: [124.607, 12.067], zoom: 10.4 },
     pinabacdao: { center: [124.994, 11.594], zoom: 11.2 },
-  }[requestedLgu] || { center: [124.895, 11.792], zoom: 12.3 };
+  }[requestedLgu] || { center: [124.907, 11.806], zoom: 11.6 };
   const waterLayers = buildLguMapLayers(requestedLgu, mapFocus.center);
   const isIllustrativeNetwork = ["calbayog", "pinabacdao"].includes(requestedLgu);
   const embedded = new URLSearchParams(window.location.search).get("embedded") === "1";
@@ -2462,7 +2462,7 @@ const assets = developmentAssets.assets;
         showDependencyArea={showDependencyArea}
         onToggleOutage={() => setOutage((previous) => !previous)}
         onBarangaySelect={selectBarangayRecord}
-        lguKey={requestedLgu}
+        lguKey={requestedLgu || "catbalogan"}
       />
 
 
