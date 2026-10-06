@@ -1,0 +1,254 @@
+﻿.snapshot-panel {
+  color: #e8eff2;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.snapshot-empty {
+  padding: 13px;
+  color: #7c8b94;
+  border: 1px dashed #334149;
+  border-radius: 7px;
+  background: #10171b;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.snapshot-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid #29343b;
+}
+
+.snapshot-header > svg {
+  color: #69adbf;
+}
+
+.snapshot-header span {
+  color: #68aebf;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .85px;
+}
+
+.snapshot-header h3 {
+  margin: 4px 0 2px;
+  font-size: 15px;
+}
+
+.snapshot-header p {
+  margin: 0;
+  color: #73838c;
+  font-size: 8px;
+}
+
+.snapshot-error {
+  margin-top: 8px;
+  padding: 8px;
+  color: #ffc0c0;
+  border: 1px solid #67383a;
+  border-radius: 6px;
+  background: #241719;
+  font-size: 8px;
+}
+
+.snapshot-signal {
+  margin-top: 11px;
+  padding: 10px;
+  border: 1px solid #315866;
+  border-radius: 7px;
+  background: #102128;
+}
+
+.snapshot-signal span {
+  display: block;
+  color: #6ba8b8;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .8px;
+}
+
+.snapshot-signal strong {
+  display: block;
+  margin-top: 4px;
+  color: #e7f4f7;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.snapshot-block {
+  margin-top: 9px;
+  padding: 9px;
+  border: 1px solid #2d3940;
+  border-radius: 7px;
+  background: #10171b;
+}
+
+.snapshot-block-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #95a6ae;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+
+.snapshot-reasons {
+  display: grid;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.snapshot-reason {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 6px;
+  align-items: start;
+}
+
+.snapshot-reason > span {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  color: #a9dce6;
+  border: 1px solid #315a65;
+  border-radius: 50%;
+  background: #12242a;
+  font-size: 7px;
+}
+
+.snapshot-reason p,
+.snapshot-tradeoff p {
+  margin: 0;
+  color: #9aa9b0;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.snapshot-tradeoff {
+  border-color: #57462f;
+  background: #191713;
+}
+
+.snapshot-tradeoff .snapshot-block-title {
+  color: #c8a868;
+}
+
+.snapshot-confidence {
+  margin-top: 9px;
+  padding: 9px;
+  border: 1px solid #303c43;
+  border-radius: 7px;
+  background: #11191d;
+}
+
+.snapshot-confidence > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.snapshot-confidence span {
+  color: #74848d;
+  font-size: 8px;
+}
+
+.snapshot-confidence strong {
+  color: #c9b978;
+  font-size: 8px;
+}
+
+.snapshot-confidence p {
+  margin: 5px 0 0;
+  color: #707f87;
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.snapshot-actions {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.snapshot-actions button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 8px;
+}
+
+.snapshot-refresh {
+  color: #9cabb2;
+  border: 1px solid #344149;
+  background: #10171b;
+}
+
+.snapshot-ai {
+  color: #e5f7fb;
+  border: 1px solid #2e6b7b;
+  background: #16566a;
+}
+
+.snapshot-actions button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.snapshot-rule {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 7px;
+  color: #64747d;
+  border-left: 2px solid #365a64;
+  background: #0f161a;
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.snapshot-muted {
+  margin: 0;
+  color: #6f7f87;
+  font-size: 8px;
+}
+.gis-app.economic-theme .snapshot-panel{color:#40364a}
+.gis-app.economic-theme .snapshot-header{border-color:#e8e1ec}
+.gis-app.economic-theme .snapshot-header span{color:#8050b2}
+.gis-app.economic-theme .snapshot-header h3,.gis-app.economic-theme .snapshot-reason strong,.gis-app.economic-theme .snapshot-block-title{color:#43384e}
+.gis-app.economic-theme .snapshot-header p,.gis-app.economic-theme .snapshot-muted,.gis-app.economic-theme .snapshot-rule{color:#81768a}
+.gis-app.economic-theme .snapshot-block,.gis-app.economic-theme .snapshot-confidence,.gis-app.economic-theme .snapshot-reasons,.gis-app.economic-theme .snapshot-reason,.gis-app.economic-theme .snapshot-signal,.gis-app.economic-theme .snapshot-tradeoff{color:#51465b;background:#f6f2f8;border-color:#e7dfea}
+.gis-app.economic-theme .snapshot-tradeoff{background:#fff8ec;border-color:#f0dfc0}
+.gis-app.economic-theme .snapshot-empty{color:#74697e;background:#f7f3f9;border-color:#e4dce9}
+.gis-app.economic-theme .snapshot-error{color:#9d4848;background:#fff5f4;border-color:#efd5d2}
+.gis-app.economic-theme .snapshot-refresh{color:#655770;background:#fff;border-color:#e2d8e9}
+.gis-app.economic-theme .snapshot-ai{color:#fff;background:#8f55d2;border-color:#8f55d2}
+
+/* Keep the decision explanation readable in the narrow GIS data drawer. */
+.gis-app.economic-theme .snapshot-header p{color:#665b70;font-size:10px}
+.gis-app.economic-theme .snapshot-signal span{color:#70419e;font-size:9px}
+.gis-app.economic-theme .snapshot-signal strong{color:#382d42;font-size:13px;line-height:1.45}
+.gis-app.economic-theme .snapshot-block{padding:11px}
+.gis-app.economic-theme .snapshot-block-title{color:#493d54;font-size:9px}
+.gis-app.economic-theme .snapshot-reasons{gap:9px}
+.gis-app.economic-theme .snapshot-reason{grid-template-columns:22px minmax(0,1fr);gap:8px}
+.gis-app.economic-theme .snapshot-reason>span{width:22px;height:22px;color:#fff;border-color:#7544a8;background:#8f55d2;font-size:9px;font-weight:700}
+.gis-app.economic-theme .snapshot-reason p,.gis-app.economic-theme .snapshot-tradeoff p{color:#5d5267;font-size:10px;line-height:1.55;overflow-wrap:anywhere}
+.gis-app.economic-theme .snapshot-tradeoff .snapshot-block-title{color:#765015}
+.gis-app.economic-theme .snapshot-confidence{padding:11px;background:#f5f1f8}
+.gis-app.economic-theme .snapshot-confidence span{color:#62576d;font-size:10px}
+.gis-app.economic-theme .snapshot-confidence strong{color:#72560d;font-size:9px}
+.gis-app.economic-theme .snapshot-confidence p{color:#62576d;font-size:9px;line-height:1.5}
+.gis-app.economic-theme .snapshot-rule{color:#5d5267;background:#f2edf6;border-color:#ddcde9;font-size:9px;line-height:1.5}
+.gis-app.economic-theme .snapshot-actions button{min-height:36px;font-size:10px;font-weight:650}
+.gis-app.economic-theme .snapshot-refresh{color:#574961}

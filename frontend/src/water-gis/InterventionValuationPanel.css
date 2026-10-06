@@ -1,0 +1,244 @@
+﻿.valuation-panel {
+  color: #e7eef2;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.valuation-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid #29343b;
+}
+
+.valuation-header > svg {
+  color: #6eafc0;
+}
+
+.valuation-header span {
+  color: #68aebe;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .8px;
+}
+
+.valuation-header h3 {
+  margin: 4px 0 3px;
+  font-size: 15px;
+}
+
+.valuation-header p {
+  margin: 0;
+  color: #71818a;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.valuation-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 0;
+}
+
+.valuation-toolbar strong {
+  display: block;
+  font-size: 9px;
+}
+
+.valuation-toolbar span {
+  display: block;
+  margin-top: 2px;
+  color: #71818b;
+  font-size: 7px;
+}
+
+.valuation-toolbar button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 7px;
+  color: #9fb1b8;
+  border: 1px solid #314048;
+  border-radius: 5px;
+  background: #11191d;
+  cursor: pointer;
+  font-size: 8px;
+}
+
+.valuation-empty {
+  padding: 12px;
+  color: #7b8b94;
+  border: 1px dashed #334149;
+  border-radius: 7px;
+  background: #10171b;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.valuation-error {
+  margin-bottom: 8px;
+  padding: 8px;
+  color: #ffc0c0;
+  border: 1px solid #67383a;
+  border-radius: 6px;
+  background: #241719;
+  font-size: 8px;
+}
+
+.valuation-method-note {
+  margin-bottom: 9px;
+  padding: 7px;
+  color: #819099;
+  border-left: 2px solid #466c77;
+  background: #10171b;
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.valuation-card {
+  margin-bottom: 9px;
+  padding: 9px;
+  border: 1px solid #2d3940;
+  border-radius: 7px;
+  background: #10171b;
+}
+
+.valuation-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.valuation-card-head > svg {
+  color: #62a9ba;
+}
+
+.valuation-card-head span {
+  display: block;
+  color: #69adbd;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.valuation-card-head strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+}
+
+.valuation-input-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.valuation-mini {
+  padding: 6px;
+  border: 1px solid #263138;
+  border-radius: 5px;
+  background: #0d1417;
+}
+
+.valuation-mini span {
+  display: block;
+  color: #697983;
+  font-size: 7px;
+}
+
+.valuation-mini strong {
+  display: block;
+  margin-top: 2px;
+  color: #c8d5d9;
+  font-size: 8px;
+}
+
+.valuation-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.valuation-result {
+  padding: 8px;
+  border: 1px solid #2b373e;
+  border-radius: 6px;
+  background: #11181c;
+}
+
+.valuation-result span {
+  display: block;
+  color: #71818a;
+  font-size: 7px;
+}
+
+.valuation-result strong {
+  display: block;
+  margin-top: 3px;
+  color: #e1e9ec;
+  font-size: 9px;
+}
+
+.valuation-result.emphasis {
+  border-color: #315a65;
+  background: #112027;
+}
+
+.valuation-result.emphasis strong {
+  color: #a8dce6;
+}
+
+.valuation-economic-loss {
+  display: flex;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid #443f31;
+  border-radius: 6px;
+  background: #181713;
+}
+
+.valuation-economic-loss > svg {
+  flex: 0 0 auto;
+  color: #c0a260;
+}
+
+.valuation-economic-loss strong {
+  display: block;
+  font-size: 8px;
+}
+
+.valuation-economic-loss span {
+  display: block;
+  margin-top: 2px;
+  color: #c7ad70;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.valuation-economic-loss p {
+  margin: 4px 0 0;
+  color: #807d72;
+  font-size: 7px;
+  line-height: 1.4;
+}
+
+@media (max-width: 520px) {
+  .valuation-input-strip,
+  .valuation-results {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gis-app.economic-theme .valuation-panel{color:#40364a}
+.gis-app.economic-theme .valuation-header{border-color:#e8e1ec}
+.gis-app.economic-theme .valuation-header span{color:#8050b2}
+.gis-app.economic-theme .valuation-header h3,.gis-app.economic-theme .valuation-card strong,.gis-app.economic-theme .valuation-result strong{color:#43384e}
+.gis-app.economic-theme .valuation-header p,.gis-app.economic-theme .valuation-card small,.gis-app.economic-theme .valuation-card p{color:#81768a}
+.gis-app.economic-theme .valuation-toolbar,.gis-app.economic-theme .valuation-input-strip,.gis-app.economic-theme .valuation-results,.gis-app.economic-theme .valuation-economic-loss,.gis-app.economic-theme .valuation-mini,.gis-app.economic-theme .valuation-result,.gis-app.economic-theme .valuation-card,.gis-app.economic-theme .valuation-method-note{color:#51465b;background:#f6f2f8;border-color:#e7dfea}
+.gis-app.economic-theme .valuation-toolbar button{color:#655770;background:#fff;border-color:#e2d8e9}
+.gis-app.economic-theme .valuation-empty{color:#74697e;background:#f7f3f9;border-color:#e4dce9}
+.gis-app.economic-theme .valuation-error{color:#9d4848;background:#fff5f4;border-color:#efd5d2}

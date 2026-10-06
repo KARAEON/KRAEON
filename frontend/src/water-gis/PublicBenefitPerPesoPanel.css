@@ -1,0 +1,266 @@
+﻿.benefit-panel {
+  color: #e7eef2;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.benefit-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid #29343b;
+}
+
+.benefit-header > svg {
+  color: #6aaebe;
+}
+
+.benefit-header span,
+.benefit-section-title {
+  color: #69aebe;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .75px;
+}
+
+.benefit-header h3 {
+  margin: 4px 0 2px;
+  font-size: 15px;
+}
+
+.benefit-header p {
+  margin: 0;
+  color: #73838c;
+  font-size: 8px;
+}
+
+.benefit-empty {
+  margin-top: 9px;
+  padding: 12px;
+  color: #7d8c94;
+  border: 1px dashed #344149;
+  border-radius: 7px;
+  background: #10171b;
+  font-size: 8px;
+}
+
+.benefit-error {
+  margin-top: 8px;
+  padding: 8px;
+  color: #ffc2c2;
+  border: 1px solid #68383b;
+  border-radius: 6px;
+  background: #241719;
+  font-size: 8px;
+}
+
+.benefit-weights {
+  padding-top: 11px;
+}
+
+.benefit-section-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+
+.benefit-weight-label {
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 4px 6px;
+  color: #b6dbe3;
+  border: 1px solid #355a64;
+  border-radius: 4px;
+  background: #122127;
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.benefit-weight {
+  display: block;
+  margin-bottom: 7px;
+  padding: 7px;
+  border: 1px solid #29353c;
+  border-radius: 6px;
+  background: #10171b;
+}
+
+.benefit-weight > div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.benefit-weight span {
+  color: #788891;
+  font-size: 8px;
+}
+
+.benefit-weight strong {
+  color: #d3dfe3;
+  font-size: 8px;
+}
+
+.benefit-weight input {
+  width: 100%;
+}
+
+.benefit-weight-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 2px;
+  color: #73838c;
+  font-size: 8px;
+}
+
+.benefit-weight-total strong {
+  color: #cbd8dc;
+}
+
+.benefit-recalculate {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px;
+  color: #edf7f9;
+  border: 1px solid #2e6b7a;
+  border-radius: 6px;
+  background: #16566a;
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.benefit-weight-note,
+.benefit-method-note {
+  margin: 6px 0 0;
+  color: #697981;
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.benefit-ranking {
+  padding-top: 12px;
+}
+
+.benefit-card {
+  margin-bottom: 7px;
+  padding: 9px;
+  border: 1px solid #2c383f;
+  border-radius: 7px;
+  background: #10171b;
+}
+
+.benefit-card.winner {
+  border-color: #3d6b59;
+  background: #11201b;
+}
+
+.benefit-card-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 7px;
+  align-items: center;
+}
+
+.benefit-rank {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  color: #a9d8c5;
+  border: 1px solid #365e4e;
+  border-radius: 50%;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.benefit-card-head span {
+  display: block;
+  color: #6d9eaa;
+  font-size: 7px;
+}
+
+.benefit-card-head strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 9px;
+}
+
+.benefit-score {
+  color: #b4e0ce;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.benefit-score small {
+  font-size: 7px;
+  color: #748780;
+}
+
+.benefit-subscore-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.benefit-subscore {
+  padding: 6px;
+  border: 1px solid #263138;
+  border-radius: 5px;
+  background: #0d1417;
+}
+
+.benefit-subscore > span {
+  color: #687983;
+  font-size: 7px;
+}
+
+.benefit-subscore > strong {
+  float: right;
+  color: #cbd8dc;
+  font-size: 7px;
+}
+
+.benefit-subscore > div {
+  height: 3px;
+  margin-top: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #223039;
+}
+
+.benefit-subscore i {
+  display: block;
+  height: 100%;
+  background: currentColor;
+  color: #5fa5b5;
+}
+
+.benefit-economics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 7px;
+  color: #6f8088;
+  font-size: 7px;
+}
+
+.benefit-economics strong {
+  color: #becdd2;
+}
+.gis-app.economic-theme .benefit-panel{color:#40364a}
+.gis-app.economic-theme .benefit-header{border-color:#e8e1ec}
+.gis-app.economic-theme .benefit-header span,.gis-app.economic-theme .benefit-section-title{color:#8050b2}
+.gis-app.economic-theme .benefit-header h3,.gis-app.economic-theme .benefit-card strong,.gis-app.economic-theme .benefit-score{color:#43384e}
+.gis-app.economic-theme .benefit-header p,.gis-app.economic-theme .benefit-weight span,.gis-app.economic-theme .benefit-weight-note{color:#81768a}
+.gis-app.economic-theme .benefit-weight,.gis-app.economic-theme .benefit-card,.gis-app.economic-theme .benefit-subscore,.gis-app.economic-theme .benefit-economics,.gis-app.economic-theme .benefit-method-note{color:#51465b;background:#f6f2f8;border-color:#e7dfea}
+.gis-app.economic-theme .benefit-weight-label{color:#70419e;background:#f1e9f8;border-color:#e4d6f0}
+.gis-app.economic-theme .benefit-recalculate{min-height:40px;color:#fff;background:#8f55d2;border-color:#8f55d2}
+.gis-app.economic-theme .benefit-empty{color:#74697e;background:#f7f3f9;border-color:#e4dce9}
+.gis-app.economic-theme .benefit-error{color:#9d4848;background:#fff5f4;border-color:#efd5d2}

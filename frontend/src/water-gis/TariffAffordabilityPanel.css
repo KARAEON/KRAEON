@@ -1,0 +1,373 @@
+﻿.tariff-panel {
+  color: #e6edf2;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.tariff-empty {
+  padding: 14px;
+  color: #7e8e99;
+  border: 1px dashed #33414a;
+  border-radius: 8px;
+  background: #11181d;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.tariff-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #29343b;
+}
+
+.tariff-head > svg {
+  color: #5fa9bb;
+}
+
+.tariff-head span {
+  color: #63aabe;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.tariff-head h3 {
+  margin: 4px 0 2px;
+  font-size: 16px;
+}
+
+.tariff-head p {
+  margin: 0;
+  color: #7b8a94;
+  font-size: 9px;
+}
+
+.tariff-section {
+  padding: 12px 0;
+  border-bottom: 1px solid #252f36;
+}
+
+.tariff-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 9px;
+  color: #9aa8b1;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .75px;
+}
+
+.tariff-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tariff-field {
+  min-width: 0;
+}
+
+.tariff-field > span {
+  display: block;
+  margin-bottom: 4px;
+  color: #80909a;
+  font-size: 9px;
+}
+
+.tariff-field > div {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #313c44;
+  border-radius: 6px;
+  background: #11171b;
+}
+
+.tariff-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  color: #edf4f7;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 11px;
+}
+
+.tariff-field small {
+  padding-right: 7px;
+  color: #687780;
+  white-space: nowrap;
+  font-size: 8px;
+}
+
+.tariff-field > div:focus-within {
+  border-color: #397486;
+}
+
+.tariff-note {
+  margin-top: 8px;
+  padding: 7px 8px;
+  color: #75858f;
+  border-left: 2px solid #456c78;
+  background: #10171b;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.tariff-results {
+  margin-top: 12px;
+  padding: 11px;
+  border: 1px solid #2d3941;
+  border-radius: 8px;
+  background: #11181d;
+}
+
+.tariff-results-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.tariff-results-head span {
+  color: #71838f;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .8px;
+}
+
+.tariff-results-head strong {
+  color: #9ed4df;
+  font-size: 10px;
+}
+
+.tariff-result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.tariff-metric {
+  position: relative;
+  padding: 8px;
+  border: 1px solid #28323a;
+  border-radius: 6px;
+  background: #0d1317;
+}
+
+.tariff-metric span {
+  display: block;
+  color: #6e7d86;
+  font-size: 8px;
+}
+
+.tariff-metric strong {
+  display: block;
+  margin-top: 3px;
+  color: #edf4f6;
+  font-size: 10px;
+}
+
+.tariff-metric svg {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  color: #6aa8b8;
+}
+
+.tariff-alert-section {
+  padding-top: 13px;
+}
+
+.tariff-alert {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  margin-bottom: 7px;
+  padding: 9px;
+  border: 1px solid #37434b;
+  border-radius: 7px;
+  background: #131a1f;
+}
+
+.tariff-alert.warning {
+  border-color: #5a4b2d;
+}
+
+.tariff-alert.critical {
+  border-color: #6a3739;
+  background: #1d1517;
+}
+
+.tariff-alert-icon {
+  padding-top: 1px;
+  color: #d4a752;
+}
+
+.tariff-alert.critical
+.tariff-alert-icon {
+  color: #e47f82;
+}
+
+.tariff-alert strong {
+  display: block;
+  color: #ecf2f4;
+  font-size: 9px;
+}
+
+.tariff-alert p {
+  margin: 3px 0 0;
+  color: #8998a1;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.tariff-alert span {
+  display: block;
+  margin-top: 5px;
+  color: #70aabb;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.tariff-alert button {
+  grid-column: 2;
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  padding: 6px 8px;
+  color: #c9eef5;
+  border: 1px solid #315d68;
+  border-radius: 5px;
+  cursor: pointer;
+  background: #15313a;
+  font-size: 8px;
+}
+
+.tariff-save {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 10px;
+  color: #f1f8fa;
+  border: 1px solid #2f6e7d;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #165367;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.tariff-save:hover {
+  background: #1a6175;
+}
+
+.tariff-save:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.tariff-error {
+  margin-top: 8px;
+  padding: 8px;
+  color: #ffb8b8;
+  border: 1px solid #693638;
+  border-radius: 6px;
+  background: #241719;
+  font-size: 9px;
+}
+
+.tariff-footnote {
+  margin-top: 8px;
+  color: #687781;
+  font-size: 8px;
+  line-height: 1.5;
+}
+/* =========================================================
+   NO. 10 â€” DEMAND RESPONSE ASSUMPTION
+   Add this at the BOTTOM of:
+   frontend/src/TariffAffordabilityPanel.css
+   ========================================================= */
+
+.demand-response-section {
+  position: relative;
+}
+
+.demand-response-tag {
+  width: fit-content;
+  margin: -2px 0 9px;
+  padding: 4px 6px;
+  color: #a8dce6;
+  border: 1px solid #315a66;
+  border-radius: 4px;
+  background: #112a31;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .8px;
+}
+
+.demand-response-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.demand-response-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: 9px;
+  padding: 7px;
+  color: #758791;
+  border: 1px solid #293840;
+  border-radius: 5px;
+  background: #0e161a;
+  font-size: 7px;
+  line-height: 1.4;
+}
+
+.demand-response-flow span {
+  color: #5ea6b9;
+}
+
+@media (max-width: 520px) {
+  .demand-response-results {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gis-app.economic-theme .tariff-panel{color:#40364a}
+.gis-app.economic-theme .tariff-head,.gis-app.economic-theme .tariff-section{border-color:#e8e1ec}
+.gis-app.economic-theme .tariff-head span,.gis-app.economic-theme .tariff-section-title{color:#8050b2}
+.gis-app.economic-theme .tariff-head h3,.gis-app.economic-theme .tariff-results-head strong,.gis-app.economic-theme .tariff-metric strong{color:#43384e}
+.gis-app.economic-theme .tariff-head p,.gis-app.economic-theme .tariff-field>span,.gis-app.economic-theme .tariff-field small,.gis-app.economic-theme .tariff-note,.gis-app.economic-theme .tariff-footnote,.gis-app.economic-theme .demand-response-flow{color:#81768a}
+.gis-app.economic-theme .tariff-field>div,.gis-app.economic-theme .tariff-field input{color:#40364a;background:#fff;border-color:#ded4e5}
+.gis-app.economic-theme .tariff-metric,.gis-app.economic-theme .tariff-results,.gis-app.economic-theme .tariff-alert,.gis-app.economic-theme .demand-response-results .tariff-metric{color:#51465b;background:#f6f2f8;border-color:#e7dfea}
+.gis-app.economic-theme .demand-response-tag,.gis-app.economic-theme .demand-response-flow{color:#665777;background:#f6f2f8;border-color:#e7dfea}
+.gis-app.economic-theme .tariff-alert strong,.gis-app.economic-theme .tariff-alert p,.gis-app.economic-theme .tariff-alert span{color:#51465b}
+.gis-app.economic-theme .tariff-alert.warning{background:#fffaf0;border-color:#ead9b8}
+.gis-app.economic-theme .tariff-alert.critical{background:#fff5f5;border-color:#edd0d0}
+.gis-app.economic-theme .tariff-alert button{color:#70419e;background:#f1e9f8;border-color:#e4d6f0}
+.gis-app.economic-theme .tariff-empty{color:#74697e;background:#f7f3f9;border-color:#e4dce9}
+.gis-app.economic-theme .tariff-error{color:#9d4848;background:#fff5f4;border-color:#efd5d2}
+.gis-app.economic-theme .tariff-save{min-height:44px;color:#fff;background:#8f55d2;border-color:#8f55d2;font-size:13px}
+.gis-app.economic-theme .tariff-panel input[type=range]{accent-color:#8f55d2}
+
+@media (max-width: 520px) {
+  .tariff-grid,
+  .tariff-result-grid {
+    grid-template-columns: 1fr;
+  }
+}

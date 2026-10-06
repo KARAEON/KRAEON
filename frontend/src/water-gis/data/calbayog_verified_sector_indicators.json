@@ -1,0 +1,427 @@
+{
+  "lgu": "Calbayog City",
+  "sources": {
+    "agriculture": {
+      "title": "Calbayog City CDP 2021-2026, Table 2.71: Irrigated Areas (2018)",
+      "url": "https://calbayog.gov.ph/wp-content/uploads/2025/09/vol1_Calbayog_CDP_2021_2026_EcoPro-2-1.pdf",
+      "year": 2018,
+      "metric": "Reported irrigated area (ha)",
+      "note": "Historical irrigated rice area only; this is not total agricultural land. Unlisted barangays have no value in this table."
+    },
+    "fisheries": {
+      "title": "Calbayog City Profile 2024, Fisheries section",
+      "url": "https://calbayog.gov.ph/wp-content/uploads/2025/07/LGU-Calbayog-City-Profile-2024.pdf",
+      "year": 2023,
+      "metric": "No barangay-level value published",
+      "note": "The profile reports citywide fishery output, not a barangay breakdown. No barangay tiles are inferred."
+    },
+    "aquaculture": {
+      "title": "City Aquaculture Program Beneficiary Shares Bountiful Harvest",
+      "url": "https://calbayog.gov.ph/city-aquaculture-program-beneficiary-shares-bountiful-harvest-online/",
+      "year": 2025,
+      "metric": "Fishpond location reported by LGU",
+      "note": "Presence only; the city report names Tanval and spells the second site Canjumadac. The official city barangay directory and boundary layer use Canhumadac, which is the name used for matching. No farm coordinates or area are published."
+    },
+    "business": {
+      "title": "Calbayog City Profile 2024, Commerce, Trade and Industry section",
+      "url": "https://calbayog.gov.ph/wp-content/uploads/2025/07/LGU-Calbayog-City-Profile-2024.pdf",
+      "year": 2024,
+      "metric": "Named local industry in city profile",
+      "note": "Counts listed industry types only, not all registered businesses or establishment totals."
+    },
+    "tourism": {
+      "title": "Calbayog City Profile 2024, Table 35: Tourist Attractions",
+      "url": "https://calbayog.gov.ph/wp-content/uploads/2025/07/LGU-Calbayog-City-Profile-2024.pdf",
+      "year": 2024,
+      "metric": "Attractions listed by barangay",
+      "note": "Counts the sites listed in the city profile; it does not measure visits, operating status, or exact site footprints."
+    }
+  },
+  "agriculture_irrigated_area_ha_2018": {
+    "Cacaransan": 4.5,
+    "Carayman": 5,
+    "Tabawan": 8,
+    "Geragaan": 12,
+    "Guinbaoyan Norte": 10,
+    "Bayo": 15,
+    "Mawacat": 34,
+    "Pilar": 40.38,
+    "Roxas II": 120,
+    "Cag-anibong": 49.32,
+    "Sigo": 25,
+    "Cagbayang": 38,
+    "Cabicahan": 25,
+    "Dinabongan": 5,
+    "Panoypoy": 5,
+    "Longsob": 7,
+    "Rizal II": 6,
+    "Mabini II": 25,
+    "Baja": 1.5,
+    "Mag-ubay": 2,
+    "Cabacungan": 5,
+    "Sinidman Occidental": 19.65,
+    "Manuel Barral, Sr.": 465.85,
+    "Binaliw": 29.3,
+    "San Joaquin": 25,
+    "Danao I": 80
+  },
+  "aquaculture_reported_barangays_2025": [
+    "Tanval",
+    "Canhumadac"
+  ],
+  "business_profile_industries_2024": {
+    "Malopalo": [
+      "Bamboo craft",
+      "Bamboo makers"
+    ],
+    "Malaga": [
+      "Doormat making"
+    ],
+    "Peña": [
+      "Upholstery"
+    ],
+    "Tinambacan Norte": [
+      "Bangus fry and sugpo production"
+    ],
+    "Matobato": [
+      "Smoked fish making",
+      "Kakanin making"
+    ],
+    "Nijaga": [
+      "Pili nut candy making"
+    ],
+    "Rawis": [
+      "Jackfruit candy making"
+    ]
+  },
+  "tourism_attractions_2024": [
+    [
+      "Tarangban Falls",
+      "Tinaplacan"
+    ],
+    [
+      "Bangon Falls",
+      "Tinaplacan"
+    ],
+    [
+      "Larik Falls",
+      "Tinaplacan"
+    ],
+    [
+      "Busay Falls",
+      "Caglanipao Sur"
+    ],
+    [
+      "Angel Falls",
+      "Caglanipao Sur"
+    ],
+    [
+      "Lologayan Falls",
+      "San Joaquin"
+    ],
+    [
+      "Pan-as Falls",
+      "Pilar"
+    ],
+    [
+      "Ton-ok Falls",
+      "Barral"
+    ],
+    [
+      "Dawo Falls 1",
+      "Dawo"
+    ],
+    [
+      "Dawo Falls 2",
+      "Dawo"
+    ],
+    [
+      "Amamaliwan Falls",
+      "Cabatuan"
+    ],
+    [
+      "Onoyan Falls",
+      "San Rufino"
+    ],
+    [
+      "Kinatadkan Falls",
+      "San Rufino"
+    ],
+    [
+      "Sinugban Falls",
+      "San Rufino"
+    ],
+    [
+      "Bagacay Falls",
+      "San Joaquin"
+    ],
+    [
+      "Kalanduwa Falls",
+      "Cogon"
+    ],
+    [
+      "Hirut Falls",
+      "Macatingog"
+    ],
+    [
+      "Dapdap Falls",
+      "Macatingog"
+    ],
+    [
+      "Pili Falls",
+      "Macatingog"
+    ],
+    [
+      "Mantaong Falls",
+      "Mantaong"
+    ],
+    [
+      "Tabukno Falls",
+      "Cagbayang"
+    ],
+    [
+      "Panlayahan Falls",
+      "Panlayahan"
+    ],
+    [
+      "Kolalaknit Falls",
+      "Panlayahan"
+    ],
+    [
+      "Pinanibasan Falls",
+      "Cag-anahaw"
+    ],
+    [
+      "Lo-oc Beach",
+      "Malajog"
+    ],
+    [
+      "Naga Beach",
+      "Naga"
+    ],
+    [
+      "Villa Marcelina Beach Resort",
+      "Saljag"
+    ],
+    [
+      "Mondejares Beach Resort",
+      "Saljag"
+    ],
+    [
+      "Bayog Beach",
+      "San Joaquin"
+    ],
+    [
+      "Coral Reef Beach Resort",
+      "Ba-ay"
+    ],
+    [
+      "Shore Beach Resort",
+      "Ba-ay"
+    ],
+    [
+      "Chateau de French Beach",
+      "Bante"
+    ],
+    [
+      "Gazebo de Rayandayan",
+      "Tinambacan Sur"
+    ],
+    [
+      "Riverfront Resort",
+      "Anislag"
+    ],
+    [
+      "Byching Swimming Pool",
+      "Peña"
+    ],
+    [
+      "Casa de Caranzo",
+      "Dagum"
+    ],
+    [
+      "Harupoy Beach",
+      "Rawis"
+    ],
+    [
+      "Hidden Beach",
+      "Saljag"
+    ],
+    [
+      "Kabusagan Beach",
+      "Marcatubig"
+    ],
+    [
+      "Roleda Beach Resort",
+      "San Joaquin"
+    ],
+    [
+      "Malopalo Beach",
+      "Malopalo"
+    ],
+    [
+      "Mawacat Rock Slide",
+      "Mawacat"
+    ],
+    [
+      "Mapaso Hot Spring",
+      "Rizal II"
+    ],
+    [
+      "Miraculous Hot Spring",
+      "Longsob"
+    ],
+    [
+      "Guinogo-an Cave",
+      "Longsob"
+    ],
+    [
+      "Danao Cave",
+      "Danao I"
+    ],
+    [
+      "Campana Cave",
+      "Cangomaod"
+    ],
+    [
+      "Ton-ok Hanging Bridge",
+      "Barral"
+    ],
+    [
+      "San Rufino Hanging Bridge",
+      "San Rufino"
+    ],
+    [
+      "Caybago Hanging Bridge",
+      "Caybago"
+    ],
+    [
+      "Calbayog Zipline and Malajog Ridge Nature Park",
+      "Malajog"
+    ],
+    [
+      "Daraga Islet",
+      "Malajog"
+    ],
+    [
+      "Kutai Islet",
+      "Malajog"
+    ],
+    [
+      "Isla Pawikan",
+      "Manguino-o"
+    ],
+    [
+      "Muro-Puro Reef",
+      "San Joaquin"
+    ],
+    [
+      "Kinawan Reef",
+      "San Joaquin"
+    ],
+    [
+      "Bulongto River",
+      "Malopalo"
+    ],
+    [
+      "City Forest and Marble Park",
+      "Malopalo"
+    ],
+    [
+      "Tinapa Production",
+      "Matobato"
+    ],
+    [
+      "Pinuk-ong Making",
+      "Payahan"
+    ],
+    [
+      "Kakanin Makers",
+      "Matobato"
+    ],
+    [
+      "Pilipig Makers",
+      "Mawacat"
+    ],
+    [
+      "Bamboo Makers of Malopalo",
+      "Malopalo"
+    ],
+    [
+      "Sawali Making",
+      "Cagbayang"
+    ],
+    [
+      "Banig Making",
+      "Tinambacan Sur"
+    ],
+    [
+      "Nipa Shingles Making",
+      "Lonoy"
+    ],
+    [
+      "St. Vincent de Paul Seminary",
+      "Dagum"
+    ],
+    [
+      "Bishop's House",
+      "Awang West"
+    ],
+    [
+      "Poor Clare Monastery",
+      "Rawis"
+    ],
+    [
+      "Daughters of Mary Consolatrix",
+      "San Policarpo"
+    ],
+    [
+      "St. Vincent Ferrer Parish",
+      "Tinambacan Sur"
+    ],
+    [
+      "Marian Place for Reflection",
+      "Malajog"
+    ],
+    [
+      "Alindanaw Farm",
+      "Cagbilwang"
+    ],
+    [
+      "Mike Pedroso Farm",
+      "Carayman"
+    ],
+    [
+      "Chan Farm",
+      "Cagbilwang"
+    ]
+  ],
+  "additional_lgus": {
+    "Catbalogan City": {
+      "sources": {
+        "agriculture": { "title": "DA-BSWM 2022 NPAAAD Map: Catbalogan City", "url": "https://www.bswm.da.gov.ph/npaaad%26safdz/wp-content/uploads/2025/05/WESTERN-SAMAR-NPAAAD_Catbalogan-City-1.pdf", "year": 2022, "metric": "No barangay-level value published", "note": "The map reports citywide land-class totals; it does not provide numeric area by barangay, so no barangay tiles are inferred." },
+        "fisheries": { "title": "BFAR Region 8: Maqueda Bay fisheries profile", "url": "https://www.bfar.da.gov.ph/wp-content/uploads/2022/05/PRSA-Progress-Report_Leyte-Gulf-Maqueda-and-Matarinao.pdf", "year": "Historical", "metric": "No barangay-level value published", "note": "Published fisheries information is for Maqueda Bay or Catbalogan as a whole, not individual barangays." },
+        "aquaculture": { "title": "Samar fish-cage and mussel-farm inventory (2023); BFAR/Provincial Fishery Office activity reports", "url": "https://www.slideshare.net/slideshow/visualizing-production-cages-and-mussel-2-pptx/281886427", "year": "2023; activity confirmed 2025–2026", "metric": "Reported aquaculture presence by barangay", "note": "The inventory lists fish cages in Payao and San Roque and mussel production in Bunu-anan and Ibol; Pangdan is also named in the mussel-farm listing and a BFAR-linked site study. These are presence indicators, not farm footprints or comparable production totals. Exact site coordinates are not available, so only barangay polygons are shaded." },
+        "business": { "title": "Catbalogan City Planning Data Portal", "url": "https://cpdco.github.io/catbalogan-cbms-dashboard/", "year": 2024, "metric": "No barangay-level business inventory published", "note": "No public business establishment counts by barangay were found; other citywide or organization data are not substituted." },
+        "tourism": { "title": "Kahusay Katbalogan: City Tourism Office attraction listings", "url": "https://catbalogancity.gov.ph/kahusay/", "year": "Current listing", "metric": "Officially listed attractions by barangay", "note": "Counts only attractions with a specific barangay stated by the city; excludes city-proper and citywide locations. This is a listing count, not visitor totals or surveyed footprints." }
+      },
+      "tourism_attractions_2024": [
+        ["Buri Baras Beach", "Estaka"],
+        ["Cabugawan Eco Park", "Cabugawan"],
+        ["Bangon Falls", "San Andres"],
+        ["Central Cave", "Cawayan"]
+      ],
+      "aquaculture_reported_barangays": ["Bunu-anan", "Ibol", "Pangdan", "Payao", "San Roque"]
+    },
+    "Pinabacdao": {
+      "sources": {
+        "agriculture": { "title": "DA-BSWM 2022 NPAAAD Map: Pinabacdao", "url": "https://www.bswm.da.gov.ph/npaaad%26safdz/wp-content/uploads/2025/05/WESTERN-SAMAR-NPAAAD_Pinabacdao.pdf", "year": 2022, "metric": "No barangay-level value published", "note": "The map reports municipal totals by agricultural land class; it does not provide numeric area by barangay, so no barangay tiles are inferred." },
+        "fisheries": { "title": "BFAR Provincial Fishery Office Samar profile", "url": "https://region8.bfar.da.gov.ph/provincial-fishery-office-samar/", "year": "Current profile", "metric": "No barangay-level value published", "note": "Production and capture information names Pinabacdao at municipality level, not individual barangays." },
+        "aquaculture": { "title": "DA-BFAR SAAD Phase 2: Western Samar project profile", "url": "https://saad.da.gov.ph/phase-2/samar-western-samar/", "year": "2023, 2025–2026", "metric": "Reported grouper-cage aquaculture project by barangay", "note": "The program lists grouper cage projects in Barangay II (Pob.); this confirms program activity in the barangay, not exact cage coordinates or total aquaculture production." },
+        "business": { "title": "Provincial Government of Samar: Pinabacdao profile", "url": "https://samar.gov.ph/pinabacdao/", "year": "Current profile", "metric": "No barangay-level business inventory published", "note": "No public business establishment counts by barangay were found; no counts are inferred." },
+        "tourism": { "title": "Pinabacdao Mangrove Safari: emerging eco-tourism site", "url": "https://www.pna.gov.ph/articles/1273630", "year": 2026, "metric": "Municipal site across seven coastal barangays; boundaries not individually identified", "note": "The provincial inspection report confirms the mangrove safari spans about 575 hectares across seven coastal barangays, but does not name the seven barangays individually. The site is under development. It is recorded as a municipal tourism asset, but no individual barangay polygons are shaded until locations are published." }
+      },
+      "aquaculture_reported_barangays": ["Barangay II"]
+    }
+  }
+}

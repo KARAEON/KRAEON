@@ -1,0 +1,352 @@
+﻿/* =========================================================
+   WATER ECONOMY SIDEBAR V4
+   Put this file at: frontend/src/Sidebar3D.css
+   App.jsx must import App.css first, then Sidebar3D.css.
+   ========================================================= */
+
+.water-economy-sidebar.sidebar {
+  position: relative !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  isolation: isolate;
+  padding: 12px 10px 28px !important;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(6, 182, 212, 0.18), transparent 25%),
+    radial-gradient(circle at 92% 34%, rgba(59, 130, 246, 0.10), transparent 24%),
+    linear-gradient(165deg, #081a2b 0%, #061421 48%, #040e18 100%) !important;
+  border-right: 1px solid rgba(103, 232, 249, 0.14) !important;
+  box-shadow:
+    22px 0 55px rgba(0, 0, 0, 0.32),
+    inset -1px 0 0 rgba(255, 255, 255, 0.025) !important;
+  backdrop-filter: blur(20px);
+  perspective: 1200px;
+}
+
+.water-economy-sidebar * {
+  box-sizing: border-box;
+}
+
+.sidebar-orb {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(35px);
+}
+
+.sidebar-orb-one {
+  top: 95px;
+  left: -65px;
+  width: 150px;
+  height: 150px;
+  background: rgba(6, 182, 212, 0.14);
+}
+
+.sidebar-orb-two {
+  top: 460px;
+  right: -75px;
+  width: 170px;
+  height: 170px;
+  background: rgba(37, 99, 235, 0.10);
+}
+
+.economy-brand.brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 0 0 12px !important;
+  padding: 14px !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(145deg, rgba(19, 61, 87, 0.86), rgba(8, 29, 48, 0.94)) !important;
+  border: 1px solid rgba(103, 232, 249, 0.17) !important;
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055) !important;
+  transform: translateZ(10px);
+}
+
+.economy-brand-icon.brand-icon {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 14px !important;
+  font-size: 22px !important;
+  background:
+    linear-gradient(145deg, rgba(8, 145, 178, 0.92), rgba(7, 89, 133, 0.92)) !important;
+  border: 1px solid rgba(165, 243, 252, 0.22);
+  box-shadow:
+    0 10px 22px rgba(6, 182, 212, 0.21),
+    inset 0 1px 0 rgba(255,255,255,.13);
+}
+
+.economy-brand-copy {
+  min-width: 0;
+}
+
+.economy-kicker {
+  margin-bottom: 2px;
+  color: #67e8f9;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 1.05px;
+}
+
+.economy-brand-copy h1 {
+  margin: 0 !important;
+  color: #f3fbff !important;
+  font-size: 18px !important;
+  line-height: 1.1;
+  letter-spacing: -0.2px;
+}
+
+.economy-brand-copy p {
+  margin: 4px 0 0 !important;
+  color: #8eacbe !important;
+  font-size: 9px !important;
+}
+
+.sidebar-status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin: 0 1px 10px;
+}
+
+.sidebar-status-card {
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(13, 41, 63, 0.78), rgba(7, 25, 41, 0.90));
+  border: 1px solid rgba(92, 139, 165, 0.13);
+  box-shadow:
+    0 8px 16px rgba(0,0,0,.16),
+    inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.sidebar-status-card span {
+  display: block;
+  margin-bottom: 4px;
+  color: #6f8da2;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .55px;
+  text-transform: uppercase;
+}
+
+.sidebar-status-card strong {
+  display: block;
+  overflow: hidden;
+  color: #e5f7ff;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-text-normal {
+  color: #86efac !important;
+}
+
+.status-text-critical {
+  color: #fca5a5 !important;
+}
+
+.economy-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  color: #7fa3b7;
+  background:
+    linear-gradient(180deg, rgba(14, 38, 59, .92), rgba(8, 26, 43, .95));
+  border: 1px solid rgba(92, 139, 165, .17);
+  box-shadow:
+    0 8px 17px rgba(0,0,0,.15),
+    inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.economy-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 0 !important;
+  color: #e9f8ff !important;
+  background: transparent !important;
+  border: 0 !important;
+  outline: 0 !important;
+  font-size: 10px;
+}
+
+.economy-search input::placeholder {
+  color: #5f7d91;
+}
+
+.sidebar-section-label {
+  margin: 15px 8px 6px;
+  color: #5d8298;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 1.3px;
+}
+
+.water-economy-sidebar .layer-group {
+  margin: 0 0 8px !important;
+  overflow: hidden;
+  border-radius: 14px !important;
+  background:
+    linear-gradient(150deg, rgba(13, 39, 61, 0.72), rgba(6, 23, 39, 0.86)) !important;
+  border: 1px solid rgba(78, 130, 159, 0.14) !important;
+  box-shadow:
+    0 10px 20px rgba(0,0,0,.17),
+    inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+
+.water-economy-sidebar .layer-group-title {
+  padding: 10px 11px !important;
+  color: #dff7ff !important;
+  background:
+    linear-gradient(90deg, rgba(6, 182, 212, 0.08), rgba(6, 182, 212, 0.01)) !important;
+  border-bottom: 1px solid rgba(120, 171, 197, 0.07);
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: .1px;
+}
+
+.water-economy-sidebar .layer-items {
+  padding: 6px 7px 8px !important;
+}
+
+.water-economy-sidebar .layer-toggle-row {
+  min-height: 34px !important;
+  margin-bottom: 2px;
+  transition:
+    transform .16s ease,
+    background .16s ease,
+    border-color .16s ease;
+}
+
+.water-economy-sidebar .layer-toggle-row:hover {
+  transform: translateX(2px);
+  background: rgba(13, 55, 80, .42) !important;
+}
+
+.water-economy-sidebar .layer-toggle-row > span {
+  font-size: 10px !important;
+}
+
+.water-economy-sidebar .layer-items > button:not(.economy-action) {
+  min-height: 34px;
+  margin-bottom: 3px !important;
+  padding: 8px 9px !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  font-size: 10px !important;
+  transition:
+    transform .16s ease,
+    border-color .16s ease,
+    box-shadow .16s ease !important;
+}
+
+.water-economy-sidebar .layer-items > button:not(.economy-action):hover {
+  transform: translateX(2px);
+  border-color: rgba(103,232,249,.11) !important;
+  box-shadow: 0 7px 14px rgba(0,0,0,.12);
+}
+
+.economy-action {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+  padding: 9px 10px;
+  cursor: pointer;
+  text-align: left;
+  color: #e8f8ff;
+  border-radius: 10px;
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  background:
+    linear-gradient(145deg, rgba(8, 103, 132, .48), rgba(7, 53, 77, .55));
+  box-shadow:
+    0 8px 15px rgba(0,0,0,.15),
+    inset 0 1px 0 rgba(255,255,255,.025);
+  font-size: 9px;
+  transition: .17s ease;
+}
+
+.economy-action:hover {
+  transform: translateY(-1px) translateX(1px);
+  border-color: rgba(103,232,249,.3);
+  box-shadow: 0 11px 20px rgba(0,0,0,.22);
+}
+
+.economy-action.warning {
+  color: #fde9ad;
+  border-color: rgba(245, 158, 11, .17);
+  background: linear-gradient(145deg, rgba(146, 91, 9, .29), rgba(77, 48, 7, .33));
+}
+
+.economy-action.danger {
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, .19);
+  background: linear-gradient(145deg, rgba(145, 39, 39, .32), rgba(77, 22, 22, .35));
+}
+
+.economy-action.restore {
+  color: #bbf7d0;
+  border-color: rgba(34,197,94,.19);
+  background: linear-gradient(145deg, rgba(22, 101, 52, .35), rgba(13, 69, 38, .34));
+}
+
+.economy-action.secondary {
+  color: #bfd7e5;
+  border-color: rgba(125, 167, 192, .12);
+  background: rgba(12, 37, 56, .70);
+}
+
+.water-economy-sidebar .lgu-panel {
+  margin: 0 !important;
+  border-radius: 11px !important;
+  box-shadow: none !important;
+}
+
+.economy-prototype-note {
+  margin-top: 13px;
+  padding: 10px 11px;
+  color: #7f9eb0;
+  border-radius: 11px;
+  border: 1px solid rgba(86, 128, 153, .09);
+  background: rgba(4, 17, 29, .60);
+  font-size: 7.5px;
+  line-height: 1.5;
+}
+
+.economy-prototype-note span {
+  display: block;
+  margin-bottom: 4px;
+  color: #67e8f9;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 1.1px;
+}
+
+/* scrollbar */
+.water-economy-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.water-economy-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.water-economy-sidebar::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: rgba(103, 232, 249, 0.18);
+}
+
+.water-economy-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(103, 232, 249, 0.28);
+}

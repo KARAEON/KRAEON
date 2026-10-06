@@ -1,0 +1,15 @@
+ADD TO MissionControlSidebar.jsx:
+
+import EditableWaterDataPanel from "./EditableWaterDataPanel";
+
+Then render:
+
+<EditableWaterDataPanel
+  psgcCode={selectedBarangay?.psgc_code}
+  onSaved={(data) => {
+    onBarangaySelect(data.record);
+    console.log("Latest calculated state:", data.calculated);
+  }}
+/>
+
+Keep ChatAssistant receiving selectedBarangay. The new ChatAssistant sends only the PSGC code; Laravel fetches the newest row and recalculates before every AI request.

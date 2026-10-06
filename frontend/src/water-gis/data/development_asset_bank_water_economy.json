@@ -1,0 +1,336 @@
+{
+  "assets": [
+    {
+      "asset_type": "Shopping mall",
+      "category": "Commercial",
+      "calculation_mode": "DPWH mercantile baseline or editable component-area model",
+      "default_reference": {
+        "dpwh_mercantile_m3_per_year_per_m2": 7.2904,
+        "dpwh_mercantile_l_per_m2_per_day": 19.974,
+        "component_coefficients_l_per_m2_per_day_user_supplied": {
+          "retail_function": 5.2,
+          "administration": 4.0,
+          "common_utility": 2.0,
+          "parking_driveway": 1.0
+        }
+      },
+      "inputs": [
+        "floor_area_m2",
+        "retail_area_m2",
+        "admin_area_m2",
+        "common_utility_area_m2",
+        "parking_driveway_area_m2",
+        "employees",
+        "visitors_per_day",
+        "construction_months",
+        "water_saving_fixtures",
+        "rainwater_harvesting"
+      ],
+      "outputs": [
+        "construction_demand",
+        "operating_demand",
+        "additional_municipal_demand",
+        "percent_of_current_supply",
+        "additional_cost",
+        "shortage_probability",
+        "households_equivalent"
+      ],
+      "note": "Component coefficients are included as editable prototype defaults from the user-provided reference text; verify against the original EIS before engineering use."
+    },
+    {
+      "asset_type": "Hospital",
+      "category": "Critical public/private facility",
+      "calculation_mode": "DPWH Green Building baseline",
+      "default_reference": {
+        "m3_per_year_per_bed": 231,
+        "l_per_bed_per_day": 632.877
+      },
+      "inputs": [
+        "beds",
+        "occupancy_pct",
+        "employees",
+        "construction_months",
+        "water_saving_fixtures",
+        "rainwater_harvesting"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent",
+        "critical_service_impact"
+      ]
+    },
+    {
+      "asset_type": "School",
+      "category": "Public/private facility",
+      "calculation_mode": "DPWH Green Building baseline",
+      "default_reference": {
+        "m3_per_year_per_m2": 1.497,
+        "l_per_m2_per_day": 4.101
+      },
+      "inputs": [
+        "floor_area_m2",
+        "students",
+        "employees",
+        "school_days_per_year",
+        "construction_months",
+        "water_saving_fixtures",
+        "rainwater_harvesting"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ]
+    },
+    {
+      "asset_type": "Hotel / resort",
+      "category": "Tourism",
+      "calculation_mode": "DPWH Green Building baseline",
+      "default_reference": {
+        "m3_per_year_per_room": 74.1982,
+        "l_per_room_per_day": 203.283
+      },
+      "inputs": [
+        "rooms",
+        "occupancy_pct",
+        "employees",
+        "visitors_per_day",
+        "construction_months",
+        "water_saving_fixtures",
+        "rainwater_harvesting"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ]
+    },
+    {
+      "asset_type": "Residential subdivision",
+      "category": "Residential",
+      "calculation_mode": "DPWH Green Building residential baseline",
+      "default_reference": {
+        "m3_per_year_per_unit": 105,
+        "l_per_unit_per_day": 287.671
+      },
+      "inputs": [
+        "housing_units",
+        "expected_occupancy_pct",
+        "construction_months",
+        "water_saving_fixtures",
+        "rainwater_harvesting"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ]
+    },
+    {
+      "asset_type": "Office complex",
+      "category": "Commercial / institutional",
+      "calculation_mode": "DPWH Green Building baseline",
+      "default_reference": {
+        "m3_per_year_per_m2": 1.8657,
+        "l_per_m2_per_day": 5.112
+      },
+      "inputs": [
+        "floor_area_m2",
+        "employees",
+        "visitors_per_day",
+        "construction_months",
+        "water_saving_fixtures",
+        "rainwater_harvesting"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ]
+    },
+    {
+      "asset_type": "Public market",
+      "category": "Commercial / public",
+      "calculation_mode": "Editable mercantile proxy",
+      "default_reference": {
+        "proxy": "DPWH mercantile baseline",
+        "l_per_m2_per_day": 19.974
+      },
+      "inputs": [
+        "floor_area_m2",
+        "stalls",
+        "employees",
+        "visitors_per_day",
+        "wet_market_share_pct"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ],
+      "note": "Use only as a prototype proxy; calibrate with local market data."
+    },
+    {
+      "asset_type": "Evacuation center",
+      "category": "Emergency",
+      "calculation_mode": "Basic domestic-demand proxy",
+      "default_reference": {
+        "l_per_person_per_day": 55
+      },
+      "inputs": [
+        "design_occupancy_people",
+        "days_occupied",
+        "employees"
+      ],
+      "outputs": [
+        "emergency_daily_demand",
+        "households_equivalent"
+      ],
+      "note": "Uses the prototype basic domestic-demand baseline, not an evacuation-center engineering standard."
+    },
+    {
+      "asset_type": "Restaurant",
+      "category": "Commercial",
+      "calculation_mode": "User-calibrated / local-reference required",
+      "default_reference": null,
+      "inputs": [
+        "seats",
+        "customers_per_day",
+        "employees",
+        "custom_l_per_customer",
+        "construction_months"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ],
+      "note": "No universal prototype coefficient is assigned; enter a local or project-specific reference."
+    },
+    {
+      "asset_type": "Car wash",
+      "category": "Commercial",
+      "calculation_mode": "User-calibrated / local-reference required",
+      "default_reference": null,
+      "inputs": [
+        "vehicles_per_day",
+        "custom_l_per_vehicle",
+        "employees",
+        "recycling_pct"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ],
+      "note": "No universal prototype coefficient is assigned; enter a local or project-specific reference."
+    },
+    {
+      "asset_type": "Poultry farm",
+      "category": "Agriculture",
+      "calculation_mode": "User-calibrated / local-reference required",
+      "default_reference": null,
+      "inputs": [
+        "birds",
+        "custom_l_per_bird_per_day",
+        "washdown_l_per_day"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ],
+      "note": "No universal prototype coefficient is assigned; enter a local or project-specific reference."
+    },
+    {
+      "asset_type": "Piggery",
+      "category": "Agriculture",
+      "calculation_mode": "User-calibrated / local-reference required",
+      "default_reference": null,
+      "inputs": [
+        "heads",
+        "custom_l_per_head_per_day",
+        "washdown_l_per_day"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ],
+      "note": "No universal prototype coefficient is assigned; enter a local or project-specific reference."
+    },
+    {
+      "asset_type": "Industrial facility",
+      "category": "Industrial",
+      "calculation_mode": "User-calibrated / local-reference required",
+      "default_reference": null,
+      "inputs": [
+        "floor_area_m2",
+        "employees",
+        "process_water_m3_per_day",
+        "cooling_water_m3_per_day"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ],
+      "note": "No universal prototype coefficient is assigned; enter a local or project-specific reference."
+    },
+    {
+      "asset_type": "Ice plant",
+      "category": "Industrial / food supply",
+      "calculation_mode": "User-calibrated / local-reference required",
+      "default_reference": null,
+      "inputs": [
+        "ice_output_tons_per_day",
+        "process_water_m3_per_day",
+        "employees"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ],
+      "note": "No universal prototype coefficient is assigned; enter a local or project-specific reference."
+    },
+    {
+      "asset_type": "Water treatment facility",
+      "category": "Water infrastructure",
+      "calculation_mode": "User-calibrated / local-reference required",
+      "default_reference": null,
+      "inputs": [
+        "treatment_capacity_m3_per_day",
+        "process_loss_pct",
+        "backwash_m3_per_day"
+      ],
+      "outputs": [
+        "operating_demand",
+        "additional_municipal_demand",
+        "households_equivalent"
+      ],
+      "note": "No universal prototype coefficient is assigned; enter a local or project-specific reference."
+    },
+    {
+      "asset_type": "Rainwater collection system",
+      "category": "Alternative supply / demand offset",
+      "calculation_mode": "Rainfall capture",
+      "default_reference": {
+        "formula": "captured_m3 = rainfall_mm * roof_area_m2 * runoff_coefficient / 1000"
+      },
+      "inputs": [
+        "roof_area_m2",
+        "rainfall_mm",
+        "runoff_coefficient",
+        "storage_capacity_m3"
+      ],
+      "outputs": [
+        "captured_water_m3",
+        "municipal_demand_offset_m3",
+        "households_equivalent_offset"
+      ],
+      "note": "Runoff coefficient and rainfall must be supplied for the specific site."
+    }
+  ]
+}

@@ -1,0 +1,897 @@
+﻿/* ============================================================
+   WATER ECONOMY MISSION CONTROL
+   Distinctive icon rail + workspace + floating scenario dock
+   ============================================================ */
+
+.mc-shell {
+  position: relative;
+  z-index: 35;
+  width: 330px;
+  min-width: 330px;
+  height: 100vh;
+  display: flex;
+  color: #e8f6fc;
+  background: #06111c;
+  border-right: 1px solid rgba(89, 201, 225, 0.12);
+  box-shadow: 20px 0 55px rgba(0, 0, 0, 0.3);
+  overflow: visible;
+}
+
+.mc-shell.mc-collapsed {
+  width: 64px;
+  min-width: 64px;
+}
+
+.mc-rail {
+  position: relative;
+  z-index: 3;
+  width: 64px;
+  min-width: 64px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(14, 165, 233, .10), transparent 20%),
+    linear-gradient(180deg, #071827, #05101a);
+  border-right: 1px solid rgba(111, 198, 220, 0.10);
+}
+
+.mc-logo {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 13px;
+  color: #d8fbff;
+  cursor: pointer;
+  background: linear-gradient(145deg, #0d95b4, #0c5f87);
+  box-shadow:
+    0 10px 24px rgba(6, 182, 212, .23),
+    inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+.mc-nav {
+  width: 100%;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 20px;
+}
+
+.mc-rail-bottom {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.mc-rail-btn,
+.mc-collapse-btn {
+  width: 100%;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: #7290a3;
+  cursor: pointer;
+  background: transparent;
+  transition: .18s ease;
+}
+
+.mc-rail-btn span {
+  display: none;
+}
+
+.mc-rail-btn:hover,
+.mc-collapse-btn:hover {
+  color: #d9f8ff;
+  background: rgba(16, 65, 89, .52);
+}
+
+.mc-rail-btn.active {
+  color: #b8f8ff;
+  border-color: rgba(103,232,249,.17);
+  background:
+    linear-gradient(145deg, rgba(8,145,178,.34), rgba(7,76,105,.25));
+  box-shadow:
+    0 8px 18px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.mc-panel {
+  width: 266px;
+  min-width: 266px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(34,211,238,.07), transparent 28%),
+    linear-gradient(170deg, #091c2d 0%, #071522 52%, #06111b 100%);
+}
+
+.mc-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 18px 16px 11px;
+}
+
+.mc-kicker {
+  color: #61d7ea;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 1.15px;
+}
+
+.mc-head h1 {
+  margin: 4px 0 0;
+  font-size: 18px;
+  line-height: 1.05;
+  color: #f0fbff;
+}
+
+.mc-head p {
+  margin: 5px 0 0;
+  color: #718da0;
+  font-size: 9px;
+}
+
+.mc-live {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border-radius: 999px;
+  color: #92f0b3;
+  background: rgba(34,197,94,.08);
+  border: 1px solid rgba(34,197,94,.12);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .65px;
+}
+
+.mc-live span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 10px rgba(74,222,128,.75);
+}
+
+.mc-live.danger {
+  color: #fecaca;
+  background: rgba(239,68,68,.08);
+  border-color: rgba(239,68,68,.14);
+}
+
+.mc-live.danger span {
+  background: #f87171;
+  box-shadow: 0 0 10px rgba(248,113,113,.72);
+}
+
+.mc-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 14px 10px;
+  padding: 9px 10px;
+  border-radius: 11px;
+  background: rgba(8, 31, 49, .72);
+  border: 1px solid rgba(92, 145, 169, .11);
+}
+
+.mc-context > div {
+  min-width: 0;
+}
+
+.mc-context span {
+  display: block;
+  color: #637f91;
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+}
+
+.mc-context strong {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: #d9edf6;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mc-context button {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 7px;
+  border: 0;
+  border-radius: 8px;
+  color: #9eeaf6;
+  cursor: pointer;
+  background: rgba(8,145,178,.11);
+  font-size: 8px;
+}
+
+.mc-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 14px 12px;
+  padding: 9px 10px;
+  border-radius: 11px;
+  color: #6e8ca0;
+  background: #071a2a;
+  border: 1px solid rgba(89, 136, 163, .14);
+}
+
+.mc-search input {
+  width: 100%;
+  min-width: 0;
+  color: #e8f8ff;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 9px;
+}
+
+.mc-search input::placeholder {
+  color: #4f6d80;
+}
+
+.mc-search button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #6e8ca0;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+}
+
+.mc-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 13px 14px;
+}
+
+.mc-content::-webkit-scrollbar,
+.mc-data-drawer::-webkit-scrollbar {
+  width: 5px;
+}
+
+.mc-content::-webkit-scrollbar-thumb,
+.mc-data-drawer::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(103, 232, 249, .17);
+}
+
+.mc-workspace {
+  padding-bottom: 10px;
+}
+
+.mc-section-head {
+  margin: 7px 2px 12px;
+}
+
+.mc-section-head > span {
+  color: #57cbe0;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 1.25px;
+}
+
+.mc-section-head h2 {
+  margin: 5px 0 0;
+  color: #eefaff;
+  font-size: 14px;
+}
+
+.mc-section-head p {
+  margin: 5px 0 0;
+  color: #6c8798;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.mc-toggle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.mc-layer-tile {
+  min-height: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 10px;
+  color: #89a5b6;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 12px;
+  border: 1px solid rgba(83, 132, 157, .10);
+  background:
+    linear-gradient(145deg, rgba(10, 37, 58, .82), rgba(7, 25, 41, .90));
+  box-shadow:
+    0 8px 18px rgba(0,0,0,.14),
+    inset 0 1px 0 rgba(255,255,255,.02);
+  transition: .18s ease;
+}
+
+.mc-layer-tile.wide {
+  width: 100%;
+  min-height: 70px;
+}
+
+.mc-layer-tile:hover {
+  transform: translateY(-2px);
+  color: #dff9ff;
+  border-color: rgba(103,232,249,.18);
+}
+
+.mc-layer-tile.active {
+  color: #eafeff;
+  border-color: rgba(34,211,238,.21);
+  background:
+    linear-gradient(145deg, rgba(8,145,178,.22), rgba(8,50,72,.68));
+  box-shadow:
+    0 12px 22px rgba(0,0,0,.20),
+    inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.mc-layer-icon {
+  width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: #65d8eb;
+  background: rgba(6,182,212,.08);
+}
+
+.mc-layer-tile span {
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.mc-switch {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mc-sector-list,
+.mc-analysis-list,
+.mc-command-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mc-subsection-title {
+  margin: 14px 0 7px;
+  color: #86a6b8;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.mc-sector,
+.mc-analysis-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  color: #91aebf;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 11px;
+  border: 1px solid rgba(82, 130, 154, .09);
+  background:
+    linear-gradient(145deg, rgba(10, 35, 54, .70), rgba(6, 23, 38, .82));
+  transition: .18s ease;
+}
+
+.mc-sector:hover,
+.mc-analysis-item:hover {
+  color: #e5faff;
+  border-color: rgba(103,232,249,.16);
+}
+
+.mc-sector.active,
+.mc-analysis-item.active {
+  color: #effdff;
+  border-color: rgba(34,211,238,.22);
+  background:
+    linear-gradient(90deg, rgba(8,145,178,.28), rgba(7,45,65,.62));
+  box-shadow:
+    0 9px 18px rgba(0,0,0,.17),
+    inset 3px 0 0 #22d3ee;
+}
+
+.mc-sector-icon {
+  width: 31px;
+  height: 31px;
+  min-width: 31px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: #6ee7f2;
+  background: rgba(6, 182, 212, .08);
+}
+
+.mc-sector > div:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+}
+
+.mc-sector strong {
+  display: block;
+  color: inherit;
+  font-size: 9px;
+}
+
+.mc-sector span {
+  display: block;
+  margin-top: 2px;
+  color: #5e7b8e;
+  font-size: 7px;
+}
+
+.mc-analysis-item span {
+  flex: 1;
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.mc-command-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.mc-command {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px;
+  color: #a4c3d1;
+  cursor: pointer;
+  border: 1px solid rgba(89, 139, 165, .12);
+  border-radius: 9px;
+  background: rgba(7, 27, 44, .75);
+  font-size: 7.5px;
+}
+
+.mc-command:hover {
+  color: #e7faff;
+  border-color: rgba(103,232,249,.20);
+}
+
+.mc-empty-card,
+.mc-sector-snapshot {
+  margin-top: 10px;
+  padding: 11px;
+  border-radius: 12px;
+  color: #6e8a9c;
+  background:
+    linear-gradient(145deg, rgba(8,31,49,.83), rgba(5,22,35,.86));
+  border: 1px dashed rgba(103,232,249,.13);
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.mc-sector-snapshot {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  border-style: solid;
+}
+
+.mc-snapshot-title {
+  grid-column: 1 / -1;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(103,232,249,.08);
+}
+
+.mc-snapshot-title span {
+  display: block;
+  color: #56c9dd;
+  font-size: 6.5px;
+  font-weight: 900;
+  letter-spacing: .9px;
+}
+
+.mc-snapshot-title strong {
+  display: block;
+  margin-top: 3px;
+  color: #e8f9ff;
+  font-size: 10px;
+}
+
+.mc-snapshot-metric {
+  padding: 7px;
+  border-radius: 9px;
+  background: rgba(12, 43, 64, .45);
+}
+
+.mc-snapshot-metric span {
+  display: block;
+  color: #638096;
+  font-size: 6.5px;
+}
+
+.mc-snapshot-metric strong {
+  display: block;
+  margin-top: 3px;
+  color: #def8ff;
+  font-size: 8px;
+}
+
+.mc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 13px 12px;
+  border-top: 1px solid rgba(93, 139, 162, .10);
+  background: rgba(4, 16, 27, .70);
+}
+
+.mc-footer > div {
+  min-width: 0;
+}
+
+.mc-footer-label {
+  display: block;
+  color: #546f81;
+  font-size: 6.5px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+
+.mc-footer strong {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: #a9c8d6;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mc-footer button {
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  color: #fecaca;
+  cursor: pointer;
+  background: rgba(239,68,68,.11);
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.mc-footer button.restore {
+  color: #bbf7d0;
+  background: rgba(34,197,94,.11);
+}
+
+/* Sliding LGU drawer */
+.mc-data-drawer {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  left: 64px;
+  width: 360px;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 12px;
+  background:
+    linear-gradient(170deg, rgba(6, 22, 36, .99), rgba(4, 14, 24, .99));
+  border-right: 1px solid rgba(103,232,249,.13);
+  box-shadow: 24px 0 55px rgba(0,0,0,.38);
+}
+
+.mc-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 10px;
+}
+
+.mc-drawer-head span {
+  color: #57cbe0;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 1.1px;
+}
+
+.mc-drawer-head h2 {
+  margin: 3px 0 0;
+  color: #ecfaff;
+  font-size: 15px;
+}
+
+.mc-drawer-head button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  color: #7794a6;
+  cursor: pointer;
+  background: rgba(13, 48, 70, .65);
+}
+
+.mc-data-drawer .lgu-panel {
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+/* Bottom scenario dock */
+.scenario-dock {
+  position: absolute;
+  z-index: 24;
+  left: 50%;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: calc(100% - 330px);
+  padding: 8px;
+  transform: translateX(-50%);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(7, 28, 44, .92), rgba(4, 18, 30, .94));
+  border: 1px solid rgba(131, 208, 226, .14);
+  box-shadow:
+    0 18px 45px rgba(0,0,0,.34),
+    inset 0 1px 0 rgba(255,255,255,.045);
+  backdrop-filter: blur(18px);
+}
+
+.scenario-context {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 9px 4px 6px;
+  border-right: 1px solid rgba(111, 160, 181, .11);
+  color: #63d4e8;
+}
+
+.scenario-context > div {
+  min-width: 110px;
+}
+
+.scenario-context span {
+  display: block;
+  color: #5b788b;
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .85px;
+}
+
+.scenario-context strong {
+  display: block;
+  margin-top: 2px;
+  max-width: 125px;
+  overflow: hidden;
+  color: #dff8ff;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenario-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.scenario-actions button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 9px;
+  color: #91adbd;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 7.5px;
+  transition: .16s ease;
+}
+
+.scenario-actions button:hover,
+.scenario-actions button.active {
+  color: #eafcff;
+  border-color: rgba(103,232,249,.13);
+  background: rgba(8, 105, 135, .20);
+}
+
+.scenario-actions .scenario-outage {
+  color: #fca5a5;
+  background: rgba(239,68,68,.07);
+}
+
+.scenario-actions .scenario-outage.restore {
+  color: #86efac;
+  background: rgba(34,197,94,.07);
+}
+
+/* Ensure App's existing left sidebar styling does not take over this component */
+.gis-app > .mc-shell {
+  flex-shrink: 0;
+}
+
+@media (max-width: 1100px) {
+  .mc-shell {
+    width: 295px;
+    min-width: 295px;
+  }
+
+  .mc-panel {
+    width: 231px;
+    min-width: 231px;
+  }
+
+  .scenario-context {
+    display: none;
+  }
+}
+
+/* Embedded GIS theme: match Water Economics' warm canvas and lavender controls. */
+.economic-theme .mc-shell{color:#352a3d;background:#f8f6f9;border-right:1px solid #e5deea;box-shadow:8px 0 28px rgba(44,28,58,.10);font-family:'DM Sans','Segoe UI',sans-serif}
+.economic-theme .mc-rail{padding-top:76px;background:linear-gradient(180deg,#e8e2ec 0%,#ded7e5 100%);border-right:1px solid #d8cfdf}
+.economic-theme .mc-logo{color:#fff;background:linear-gradient(145deg,#a875e5,#8850cb);box-shadow:0 7px 18px rgba(143,85,210,.24)}
+.economic-theme .mc-rail-btn,.economic-theme .mc-collapse-btn{color:#81738d;border-color:transparent}
+.economic-theme .mc-rail-btn:hover,.economic-theme .mc-collapse-btn:hover{color:#613a8c;background:#f3edf8}
+.economic-theme .mc-rail-btn.active{color:#fff;border-color:#8f55d2;background:linear-gradient(145deg,#a06adb,#8650c5);box-shadow:0 6px 15px rgba(120,72,174,.2)}
+.economic-theme .mc-panel{background:linear-gradient(165deg,#fbf9fc 0%,#f6f2f8 100%)}
+.economic-theme .mc-head{padding-top:76px}
+.economic-theme .mc-kicker,.economic-theme .mc-section-head>span,.economic-theme .mc-drawer-head>span{color:#8f55d2}
+.economic-theme .mc-head h1,.economic-theme .mc-section-head h2,.economic-theme .mc-drawer-head h2{color:#33283c}
+.economic-theme .mc-head p,.economic-theme .mc-section-head p{color:#81758a}
+.economic-theme .mc-live{color:#4e805b;background:#edf6ed;border-color:#d9ead9}
+.economic-theme .mc-live span{background:#61a66b;box-shadow:none}
+.economic-theme .mc-context{background:#f1ebf6;border-color:#e5dceb}
+.economic-theme .mc-context span{color:#8b7d94}
+.economic-theme .mc-context strong{color:#3b3044}
+.economic-theme .mc-context button{color:#7647a6;background:#e9def2}
+.economic-theme .mc-search{color:#8a7c94;background:#fff;border-color:#e3dce8}
+.economic-theme .mc-search input{color:#352a3d}
+.economic-theme .mc-search input::placeholder{color:#a094a8}
+.economic-theme .mc-search button{color:#8a7c94}
+.economic-theme .mc-content::-webkit-scrollbar-thumb,.economic-theme .mc-data-drawer::-webkit-scrollbar-thumb{background:#d9c9e8}
+.economic-theme .mc-layer-tile{color:#675b70;border-color:#e6dfea;background:linear-gradient(145deg,#fff,#f6f1f8);box-shadow:0 4px 12px rgba(50,34,64,.06)}
+.economic-theme .mc-layer-tile:hover{color:#55327b;border-color:#c9b0e2}
+.economic-theme .mc-layer-tile.active{color:#5d3883;border-color:#c8afe0;background:linear-gradient(145deg,#f5eefb,#ebe0f5);box-shadow:inset 3px 0 0 #8f55d2,0 5px 14px rgba(79,48,104,.08)}
+.economic-theme .mc-layer-icon,.economic-theme .mc-sector-icon{color:#8f55d2;background:#f0e8f7}
+.economic-theme .mc-sector,.economic-theme .mc-analysis-item{color:#665970;border-color:#e7e0ea;background:#fff}
+.economic-theme .mc-sector:hover,.economic-theme .mc-analysis-item:hover{color:#59347e;border-color:#cfb8e5;background:#faf7fc}
+.economic-theme .mc-sector.active,.economic-theme .mc-analysis-item.active{color:#56327b;border-color:#d6c1e8;background:#f3edf8;box-shadow:inset 3px 0 0 #8f55d2}
+.economic-theme .mc-sector span{color:#897e90}
+.economic-theme .mc-command{color:#6f6278;border-color:#e4dce9;background:#fff}
+.economic-theme .mc-command:hover{color:#603b88;border-color:#cfb5e4;background:#f8f3fb}
+.economic-theme .mc-empty-card,.economic-theme .mc-sector-snapshot{color:#74677d;border-color:#e2d9e8;background:#fff}
+.economic-theme .mc-snapshot-title{border-color:#e9e1ed}
+.economic-theme .mc-snapshot-title span{color:#8f55d2}
+.economic-theme .mc-snapshot-title strong,.economic-theme .mc-snapshot-metric strong{color:#3c3044}
+.economic-theme .mc-snapshot-metric{background:#f5f1f7}
+.economic-theme .mc-snapshot-metric span{color:#85798d}
+.economic-theme .mc-footer{border-color:#e5deea;background:#f2edf5}
+.economic-theme .mc-footer-label{color:#93869c}
+.economic-theme .mc-footer strong{color:#574961}
+.economic-theme .mc-footer button{color:#a74e55;background:#fbeeee}
+.economic-theme .mc-footer button.restore{color:#4e805b;background:#edf6ed}
+.economic-theme .mc-data-drawer{background:linear-gradient(165deg,#fbf9fc,#f2edf5);border-color:#e1d8e8;box-shadow:14px 0 36px rgba(44,28,58,.16)}
+.economic-theme .mc-drawer-head button{color:#74647e;background:#eee7f2}
+.economic-theme .scenario-dock{background:rgba(250,248,252,.95);border-color:#e4dce9;box-shadow:0 12px 34px rgba(44,28,58,.16)}
+.economic-theme .scenario-context{color:#8f55d2;border-color:#e8e0ed}
+.economic-theme .scenario-context span{color:#91849a}
+.economic-theme .scenario-context strong{color:#44374d}
+.economic-theme .scenario-actions button{color:#756780}
+.economic-theme .scenario-actions button:hover,.economic-theme .scenario-actions button.active{color:#603987;border-color:#e2d5ed;background:#f1e9f7}
+.economic-theme .scenario-actions .scenario-outage{color:#a34b51;background:#fbeeee}
+.economic-theme .scenario-actions .scenario-outage.restore{color:#4e805b;background:#edf6ed}
+.economic-theme .daloy-panel{color:#392d42;background:#fbf9fc;border-color:#e4dce9;box-shadow:0 18px 50px rgba(44,28,58,.2);font-family:'DM Sans','Segoe UI',sans-serif}
+.economic-theme .daloy-header,.economic-theme .daloy-context,.economic-theme .daloy-tools,.economic-theme .daloy-composer,.economic-theme .daloy-footer-note{background:#f4eff7;border-color:#e5ddeb}
+.economic-theme .daloy-brand strong,.economic-theme .daloy-context-location span,.economic-theme .daloy-message-line strong{color:#392d42}
+.economic-theme .daloy-brand span,.economic-theme .daloy-context-location small,.economic-theme .daloy-tools-label,.economic-theme .daloy-footer-note{color:#897d92}
+.economic-theme .daloy-mark{color:#8050b2;background:#eee5f6;border-color:#ddcce9}
+.economic-theme .daloy-context-badge{color:#4e805b;background:#edf6ed;border-color:#d8e9d8}
+.economic-theme .daloy-messages{background:#fbf9fc}
+.economic-theme .daloy-avatar{color:#8050b2;background:#f0e8f7;border-color:#dfd0eb}
+.economic-theme .daloy-bubble.assistant{color:#5e5268;background:#fff;border-color:#e5ddeb}
+.economic-theme .daloy-bubble.user{color:#fff;background:#8f55d2;border-color:#8f55d2}
+.economic-theme .daloy-quick-grid button{color:#675b70;background:#fff;border-color:#e4dce9}
+.economic-theme .daloy-tools-label{font-size:10px;letter-spacing:.08em}
+.economic-theme .daloy-quick-grid{gap:7px}
+.economic-theme .daloy-quick-grid button{min-height:44px;padding:9px 11px;font-size:12px;line-height:1.35}
+.economic-theme .daloy-quick-grid button svg{width:14px;height:14px}
+.economic-theme .daloy-quick-grid button:hover{color:#603987;background:#f5eff9;border-color:#d6c2e8}
+.economic-theme .daloy-quick-grid button svg{color:#8f55d2}
+.economic-theme .daloy-composer input{color:#3b3044;background:#fff;border-color:#ded4e5}
+.economic-theme .daloy-composer input{min-height:48px;padding:12px 14px;font-size:15px;line-height:1.45}
+.economic-theme .daloy-composer input::placeholder{font-size:14px}
+.economic-theme .daloy-composer button{min-width:64px;padding:0 14px;font-size:13px}
+.economic-theme .daloy-composer input::placeholder{color:#a296ab}
+.economic-theme .daloy-composer button,.economic-theme .daloy-launcher{color:#fff;background:#8f55d2;border-color:#8f55d2}
+.economic-theme .daloy-composer button:hover,.economic-theme .daloy-launcher:hover{background:#7942bb}
+.economic-theme .daloy-suggestion,.economic-theme .daloy-preview{color:#574961;background:#f5f0f8;border-color:#e0d5e8}
+.economic-theme .daloy-suggestion>div:first-child,.economic-theme .daloy-preview-head{color:#76509b}
+.economic-theme .daloy-change-list span,.economic-theme .daloy-suggestion small,.economic-theme .daloy-preview-row>span,.economic-theme .daloy-preview>small{color:#897e90}
+.economic-theme .daloy-change-list strong,.economic-theme .daloy-preview-row strong{color:#4b3d56}
+.economic-theme .daloy-suggestion button{color:#fff;background:#8f55d2;border-color:#8f55d2}
+.economic-theme .daloy-preview-row{border-color:#e4dce9}
+
+/* Continue the light Water Economics theme through every lower data panel. */
+.economic-theme .invest-panel,.economic-theme .ew-panel,.economic-theme .valuation-panel,.economic-theme .benefit-panel,.economic-theme .tariff-panel,.economic-theme .nrw-panel,.economic-theme .snapshot-panel{color:#40364a;font-family:'DM Sans','Segoe UI',sans-serif}
+.economic-theme .invest-header,.economic-theme .valuation-header,.economic-theme .benefit-header,.economic-theme .ew-head{border-color:#e8e1ec}
+.economic-theme .invest-header h3,.economic-theme .valuation-header h3,.economic-theme .benefit-header h3,.economic-theme .ew-head h3{color:#392f43}
+.economic-theme .invest-header p,.economic-theme .valuation-header p,.economic-theme .benefit-header p,.economic-theme .ew-head p{color:#81768a}
+.economic-theme .invest-header span,.economic-theme .valuation-header span,.economic-theme .benefit-header span,.economic-theme .ew-head>div>span{color:#8050b2}
+.economic-theme .invest-section-title,.economic-theme .benefit-section-title,.economic-theme .ew-panel h4{color:#796c85;font-size:10px}
+.economic-theme .invest-purpose,.economic-theme .invest-note,.economic-theme .invest-empty,.economic-theme .invest-loading,.economic-theme .invest-no-projects,.economic-theme .invest-score,.economic-theme .invest-summary-metric,.economic-theme .invest-project-card,.economic-theme .invest-small-metric,.economic-theme .invest-score-chip,.economic-theme .valuation-card,.economic-theme .valuation-method-note,.economic-theme .benefit-card,.economic-theme .benefit-method-note,.economic-theme .ew-metric,.economic-theme .ew-alert{color:#51465b;background:#f6f2f8;border-color:#e7dfea;box-shadow:none}
+.economic-theme .invest-purpose,.economic-theme .invest-note{border-left-color:#a979d6}
+.economic-theme .invest-summary-metric span,.economic-theme .invest-small-metric span,.economic-theme .invest-score span,.economic-theme .invest-score-chip,.economic-theme .ew-metric span,.economic-theme .ew-grid label>span{color:#81768a}
+.economic-theme .invest-summary-metric strong,.economic-theme .invest-card-head strong,.economic-theme .invest-small-metric strong,.economic-theme .invest-score strong,.economic-theme .invest-score-chip strong,.economic-theme .valuation-card strong,.economic-theme .ew-metric strong{color:#43384e}
+.economic-theme .invest-template-grid button,.economic-theme .invest-cancel,.economic-theme .invest-card-actions button,.economic-theme .valuation-toolbar button,.economic-theme .benefit-recalculate{color:#655770;background:#fff;border-color:#e2d8e9}
+.economic-theme .invest-template-grid button:hover,.economic-theme .invest-template-grid button.active,.economic-theme .invest-card-actions button:hover{color:#70419e;background:#f4edf9;border-color:#d8c5e8}
+.economic-theme .invest-field>span,.economic-theme .invest-field small{color:#81768a}
+.economic-theme .invest-field>div,.economic-theme .invest-score input,.economic-theme .ew-grid label>div{background:#fff;border-color:#ded4e5}
+.economic-theme .invest-field input,.economic-theme .ew-grid input,.economic-theme .valuation-panel input,.economic-theme .benefit-panel input,.economic-theme .tariff-panel input,.economic-theme .nrw-panel input{color:#40364a}
+.economic-theme .invest-save,.economic-theme .ew-save{color:#fff;background:#8f55d2;border-color:#8f55d2}
+.economic-theme .ew-empty,.economic-theme .valuation-empty,.economic-theme .benefit-empty{color:#74697e;background:#f7f3f9;border-color:#e4dce9}
+.economic-theme .ew-head span,.economic-theme .ew-panel h4{color:#8050b2}
+.economic-theme .ew-grid label>span,.economic-theme .ew-note,.economic-theme .ew-grid small{color:#81768a}
+.economic-theme .ew-alert{border-color:#e6dfea}
+.economic-theme .ew-alert.warning{border-color:#ead9b8;background:#fffaf0}
+.economic-theme .ew-alert.critical{border-color:#edd0d0;background:#fff5f5}
+.economic-theme .ew-alert strong{color:#493e53}
+.economic-theme .ew-alert span{color:#81768a}
+.economic-theme .ew-error,.economic-theme .valuation-error,.economic-theme .benefit-error{color:#9d4848;background:#fff5f4;border-color:#efd5d2}
+.economic-theme .valuation-toolbar,.economic-theme .valuation-input-strip,.economic-theme .valuation-results,.economic-theme .valuation-economic-loss,.economic-theme .benefit-weight,.economic-theme .benefit-subscore,.economic-theme .tariff-metric{color:#51465b;background:#f6f2f8;border-color:#e7dfea}
+.economic-theme .valuation-card-head,.economic-theme .valuation-result,.economic-theme .benefit-ranking,.economic-theme .tariff-results,.economic-theme .tariff-alert{border-color:#e7dfea}
+.economic-theme .valuation-card-head strong,.economic-theme .valuation-result strong,.economic-theme .benefit-card strong,.economic-theme .benefit-score,.economic-theme .benefit-weight-label,.economic-theme .tariff-metric strong{color:#43384e}
+.economic-theme .valuation-card small,.economic-theme .valuation-card p,.economic-theme .benefit-card small,.economic-theme .benefit-weight-note,.economic-theme .tariff-note,.economic-theme .tariff-footnote{color:#81768a}
+.economic-theme .benefit-recalculate,.economic-theme .tariff-save{color:#fff;background:#8f55d2;border-color:#8f55d2}
+.economic-theme .invest-panel :is(input,button),.economic-theme .ew-panel :is(input,button),.economic-theme .valuation-panel :is(input,button),.economic-theme .benefit-panel :is(input,button){font-size:12px}
+.economic-theme .invest-panel input,.economic-theme .ew-panel input{min-height:38px}
+.economic-theme .invest-panel input[type=range],.economic-theme .benefit-panel input[type=range],.economic-theme .tariff-panel input[type=range]{min-height:0;accent-color:#8f55d2}
+.economic-theme .invest-save,.economic-theme .ew-save{min-height:44px;font-size:13px}
+@media(max-width:760px){.economic-theme .mc-rail{padding-top:76px}.economic-theme .mc-head{padding-top:76px}}
+
+/* Larger, higher-contrast type throughout the GIS data drawer. */
+.economic-theme .mc-drawer-head>span{font-size:10px;letter-spacing:.09em}
+.economic-theme .mc-data-drawer :is(.lgu-panel,.ew-panel,.tariff-panel,.nrw-panel,.invest-panel,.valuation-panel,.benefit-panel,.snapshot-panel){font-size:12px;line-height:1.5}
+.economic-theme .mc-data-drawer :is(.lgu-panel,.ew-panel,.tariff-panel,.nrw-panel,.invest-panel,.valuation-panel,.benefit-panel,.snapshot-panel) :is(p,span,small,label,dt,dd){font-size:11px;line-height:1.5}
+.economic-theme .mc-data-drawer :is(.lgu-panel,.ew-panel,.tariff-panel,.nrw-panel,.invest-panel,.valuation-panel,.benefit-panel,.snapshot-panel) :is(h2,h3){font-size:17px;line-height:1.3}
+.economic-theme .mc-data-drawer :is(.ew-panel,.tariff-panel,.nrw-panel,.invest-panel,.valuation-panel,.benefit-panel,.snapshot-panel) :is(h4,.ew-head>span,.tariff-head>div>span,.nrw-head>div>span,.invest-header>div>span,.valuation-header>div>span,.benefit-header>div>span){font-size:11px;line-height:1.4}
+.economic-theme .mc-data-drawer :is(.ew-panel,.tariff-panel,.nrw-panel,.invest-panel,.valuation-panel,.benefit-panel,.snapshot-panel) input:not([type=range]),.economic-theme .mc-data-drawer select,.economic-theme .mc-data-drawer textarea{font-size:12px;min-height:40px}
+.economic-theme .mc-data-drawer :is(.ew-save,.tariff-save,.nrw-save,.invest-save,.benefit-recalculate,.snapshot-actions button){font-size:12px;min-height:40px}
+.economic-theme .mc-data-drawer :is(.ew-metric,.tariff-metric,.nrw-metric,.invest-summary-metric,.invest-score,.valuation-result,.benefit-subscore,.snapshot-reason) :is(span,p,small){color:#62586b}
+.economic-theme .mc-data-drawer :is(.ew-metric,.tariff-metric,.nrw-metric,.invest-summary-metric,.invest-score,.valuation-result,.benefit-subscore) strong{font-size:13px;color:#382d42}
+.economic-theme .mc-data-drawer .data-note,.economic-theme .mc-data-drawer .lgu-panel .data-note{font-size:11px;line-height:1.55;color:#62586b}
+.economic-theme .mc-sector-edit{width:100%;display:flex;align-items:center;justify-content:center;margin-top:9px;padding:8px 10px;border:1px solid #cfb7e4;border-radius:8px;background:#f4edf9;color:#70419e;font-size:11px;font-weight:750;cursor:pointer}
+.economic-theme .mc-sector-edit:hover{border-color:#b997df;background:#eadcf7}

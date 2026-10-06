@@ -1,0 +1,382 @@
+﻿.invest-panel {
+  color: #e7eef2;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.invest-empty,
+.invest-loading,
+.invest-no-projects {
+  padding: 13px;
+  color: #7d8d96;
+  border: 1px dashed #34424a;
+  border-radius: 7px;
+  background: #10171b;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.invest-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid #29343b;
+}
+
+.invest-header > svg {
+  color: #68a9bb;
+}
+
+.invest-header span {
+  color: #6bb0c3;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .9px;
+}
+
+.invest-header h3 {
+  margin: 4px 0 2px;
+  font-size: 15px;
+}
+
+.invest-header p {
+  margin: 0;
+  color: #72838d;
+  font-size: 8px;
+}
+
+.invest-purpose {
+  margin-top: 10px;
+  padding: 8px;
+  color: #b9c8ce;
+  border-left: 2px solid #4a8190;
+  background: #10181c;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.invest-error {
+  margin-top: 8px;
+  padding: 8px;
+  color: #ffc2c2;
+  border: 1px solid #67393b;
+  border-radius: 6px;
+  background: #241719;
+  font-size: 9px;
+}
+
+.invest-templates,
+.invest-editor,
+.invest-projects {
+  padding-top: 12px;
+}
+
+.invest-section-title {
+  margin-bottom: 8px;
+  color: #86959e;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+
+.invest-template-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.invest-template-grid button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 7px;
+  color: #99a7af;
+  text-align: left;
+  border: 1px solid #2d3940;
+  border-radius: 6px;
+  background: #11181c;
+  cursor: pointer;
+  font-size: 8px;
+}
+
+.invest-template-grid button:hover,
+.invest-template-grid button.active {
+  color: #d9eef3;
+  border-color: #397385;
+  background: #12262d;
+}
+
+.invest-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.invest-cancel {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 6px;
+  color: #8c9aa2;
+  border: 1px solid #313d44;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 7px;
+}
+
+.invest-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.invest-field {
+  display: block;
+}
+
+.invest-field > span {
+  display: block;
+  margin-bottom: 4px;
+  color: #778892;
+  font-size: 8px;
+}
+
+.invest-field > div {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #313d44;
+  border-radius: 6px;
+  background: #10161a;
+}
+
+.invest-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  color: #edf4f6;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 9px;
+}
+
+.invest-field small {
+  padding-right: 7px;
+  color: #697983;
+  white-space: nowrap;
+  font-size: 7px;
+}
+
+.invest-score-grid {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.invest-score {
+  padding: 8px;
+  border: 1px solid #29353c;
+  border-radius: 6px;
+  background: #11181c;
+}
+
+.invest-score > div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.invest-score span {
+  color: #7c8c95;
+  font-size: 8px;
+}
+
+.invest-score strong {
+  color: #cbd8dc;
+  font-size: 8px;
+}
+
+.invest-score input {
+  width: 100%;
+}
+
+.invest-save {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 10px;
+  color: #eef7f9;
+  border: 1px solid #2e6c7b;
+  border-radius: 6px;
+  background: #16566a;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.invest-save:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.invest-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.invest-summary-metric {
+  padding: 8px;
+  border: 1px solid #28343b;
+  border-radius: 6px;
+  background: #10171b;
+}
+
+.invest-summary-metric span {
+  display: block;
+  color: #6d7d86;
+  font-size: 7px;
+}
+
+.invest-summary-metric strong {
+  display: block;
+  margin-top: 3px;
+  color: #e3ecef;
+  font-size: 9px;
+}
+
+.invest-project-card {
+  margin-bottom: 8px;
+  padding: 9px;
+  border: 1px solid #2e3940;
+  border-radius: 7px;
+  background: #10171b;
+}
+
+.invest-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.invest-card-head span {
+  display: block;
+  color: #68a9ba;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.invest-card-head strong {
+  display: block;
+  margin-top: 3px;
+  color: #e7eef1;
+  font-size: 9px;
+}
+
+.invest-card-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.invest-card-actions button {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  color: #83929a;
+  border: 1px solid #303c43;
+  border-radius: 5px;
+  background: #0e1518;
+  cursor: pointer;
+}
+
+.invest-card-actions button:hover {
+  color: #d7e4e8;
+  border-color: #47727e;
+}
+
+.invest-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.invest-small-metric {
+  padding: 6px;
+  border: 1px solid #263138;
+  border-radius: 5px;
+  background: #0d1417;
+}
+
+.invest-small-metric span {
+  display: block;
+  color: #687983;
+  font-size: 7px;
+}
+
+.invest-small-metric strong {
+  display: block;
+  margin-top: 2px;
+  color: #cbd7dc;
+  font-size: 8px;
+}
+
+.invest-card-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+}
+
+.invest-score-chip {
+  padding: 4px 5px;
+  color: #7f919a;
+  border: 1px solid #2d3a41;
+  border-radius: 4px;
+  background: #0e1519;
+  font-size: 7px;
+}
+
+.invest-score-chip strong {
+  color: #bcd5dc;
+}
+
+.invest-note {
+  margin-top: 9px;
+  padding: 7px;
+  color: #6f7e87;
+  border-left: 2px solid #3b5d67;
+  background: #10171b;
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+@media (max-width: 520px) {
+  .invest-template-grid,
+  .invest-grid,
+  .invest-summary,
+  .invest-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gis-app.economic-theme .invest-panel{color:#40364a}
+.gis-app.economic-theme .invest-empty,.gis-app.economic-theme .invest-loading,.gis-app.economic-theme .invest-no-projects,.gis-app.economic-theme .invest-purpose,.gis-app.economic-theme .invest-note,.gis-app.economic-theme .invest-score,.gis-app.economic-theme .invest-summary-metric,.gis-app.economic-theme .invest-project-card,.gis-app.economic-theme .invest-small-metric,.gis-app.economic-theme .invest-score-chip{color:#51465b;background:#f6f2f8;border-color:#e7dfea}
+.gis-app.economic-theme .invest-header,.gis-app.economic-theme .invest-section-head{border-color:#e8e1ec}
+.gis-app.economic-theme .invest-header h3,.gis-app.economic-theme .invest-card-head strong,.gis-app.economic-theme .invest-summary-metric strong,.gis-app.economic-theme .invest-small-metric strong,.gis-app.economic-theme .invest-score strong,.gis-app.economic-theme .invest-score-chip strong{color:#43384e}
+.gis-app.economic-theme .invest-header span,.gis-app.economic-theme .invest-section-title{color:#8050b2}
+.gis-app.economic-theme .invest-header p,.gis-app.economic-theme .invest-purpose,.gis-app.economic-theme .invest-field>span,.gis-app.economic-theme .invest-field small,.gis-app.economic-theme .invest-score span,.gis-app.economic-theme .invest-summary-metric span,.gis-app.economic-theme .invest-small-metric span{color:#81768a}
+.gis-app.economic-theme .invest-template-grid button,.gis-app.economic-theme .invest-cancel,.gis-app.economic-theme .invest-card-actions button{color:#655770;background:#fff;border-color:#e2d8e9}
+.gis-app.economic-theme .invest-field>div,.gis-app.economic-theme .invest-score input{background:#fff;border-color:#ded4e5}
+.gis-app.economic-theme .invest-field input{color:#40364a}
+.gis-app.economic-theme .invest-save{min-height:44px;color:#fff;background:#8f55d2;border-color:#8f55d2;font-size:13px}

@@ -1,0 +1,348 @@
+﻿.nrw-panel {
+  color: #e8eff3;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.nrw-empty {
+  padding: 14px;
+  color: #81909a;
+  border: 1px dashed #32414a;
+  border-radius: 7px;
+  background: #10171b;
+  font-size: 10px;
+}
+
+.nrw-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #28343b;
+}
+
+.nrw-head span,
+.nrw-section-title {
+  color: #6daec0;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .9px;
+}
+
+.nrw-head h3 {
+  margin: 4px 0 2px;
+  font-size: 15px;
+}
+
+.nrw-head p {
+  margin: 0;
+  color: #73838d;
+  font-size: 9px;
+}
+
+.nrw-head svg {
+  color: #64a9bd;
+}
+
+.nrw-input-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid #273239;
+}
+
+.nrw-input-section label > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #82919a;
+  font-size: 9px;
+}
+
+.nrw-input-section label > div {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #35424a;
+  border-radius: 6px;
+  background: #10161a;
+}
+
+.nrw-input-section input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px;
+  color: #eef5f7;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 11px;
+}
+
+.nrw-input-section small {
+  padding-right: 8px;
+  color: #687983;
+  white-space: nowrap;
+  font-size: 8px;
+}
+
+.nrw-input-section p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #6f7e87;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.nrw-visual {
+  padding: 13px 0;
+  border-bottom: 1px solid #273239;
+}
+
+.nrw-visual-title {
+  margin-bottom: 8px;
+  color: #8d9ba4;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.nrw-pipe {
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid #31434c;
+  border-radius: 999px;
+  background: #17303a;
+}
+
+.nrw-loss {
+  height: 100%;
+  background: repeating-linear-gradient(
+    135deg,
+    #71383d 0 5px,
+    #833f45 5px 10px
+  );
+  transition: width 240ms ease;
+}
+
+.nrw-visual-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 7px;
+  color: #74858e;
+  font-size: 8px;
+}
+
+.nrw-visual-row strong {
+  color: #d9e6ea;
+}
+
+.nrw-recovery-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 5px 7px;
+  color: #9bd2be;
+  border: 1px solid #31594b;
+  border-radius: 5px;
+  background: #14251f;
+  font-size: 8px;
+}
+
+.nrw-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 12px 0;
+}
+
+.nrw-metric {
+  padding: 8px;
+  border: 1px solid #29343b;
+  border-radius: 6px;
+  background: #10171b;
+}
+
+.nrw-metric span {
+  display: block;
+  color: #6f7f88;
+  font-size: 8px;
+}
+
+.nrw-metric strong {
+  display: block;
+  margin-top: 3px;
+  color: #e4edf0;
+  font-size: 10px;
+}
+
+.nrw-metric.highlight {
+  border-color: #31564d;
+  background: #12221e;
+}
+
+.nrw-metric.highlight strong {
+  color: #9bd7c1;
+}
+
+.nrw-metric.loss {
+  border-color: #533437;
+  background: #1a1416;
+}
+
+.nrw-metric.loss strong {
+  color: #e39a9d;
+}
+
+.nrw-formula {
+  margin-bottom: 12px;
+  padding: 9px;
+  border: 1px solid #33434b;
+  border-radius: 6px;
+  background: #11191e;
+}
+
+.nrw-formula span {
+  display: block;
+  color: #6e7f89;
+  font-size: 8px;
+}
+
+.nrw-formula strong {
+  display: block;
+  margin-top: 3px;
+  color: #cbd9de;
+  font-size: 9px;
+}
+
+.nrw-alerts {
+  padding-top: 4px;
+}
+
+.nrw-section-title {
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+
+.nrw-alert {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  margin-bottom: 7px;
+  padding: 9px;
+  border: 1px solid #54442e;
+  border-radius: 6px;
+  background: #1b1914;
+}
+
+.nrw-alert.warning {
+  border-color: #604b2e;
+}
+
+.nrw-alert.advisory {
+  border-color: #315448;
+  background: #13201c;
+}
+
+.nrw-alert > svg {
+  margin-top: 1px;
+  color: #d5a052;
+}
+
+.nrw-alert.advisory > svg {
+  color: #81c1aa;
+}
+
+.nrw-alert strong {
+  display: block;
+  font-size: 9px;
+}
+
+.nrw-alert p {
+  margin: 3px 0 0;
+  color: #89979f;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.nrw-alert span {
+  display: block;
+  margin-top: 5px;
+  color: #6ba7b8;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.nrw-alert button {
+  grid-column: 2;
+  width: fit-content;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-top: 3px;
+  padding: 5px 7px;
+  color: #cceef5;
+  border: 1px solid #305c68;
+  border-radius: 5px;
+  background: #153039;
+  cursor: pointer;
+  font-size: 8px;
+}
+
+.nrw-save {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 10px;
+  color: #eef7f8;
+  border: 1px solid #2e6d7d;
+  border-radius: 6px;
+  background: #15566b;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.nrw-save:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.nrw-error {
+  margin-top: 8px;
+  padding: 8px;
+  color: #ffc2c2;
+  border: 1px solid #66383a;
+  border-radius: 6px;
+  background: #241719;
+  font-size: 9px;
+}
+
+@media (max-width: 520px) {
+  .nrw-input-section,
+  .nrw-results {
+    grid-template-columns: 1fr;
+  }
+
+  .nrw-input-section p {
+    grid-column: 1;
+  }
+}
+.gis-app.economic-theme .nrw-panel{color:#40364a}
+.gis-app.economic-theme .nrw-head{border-color:#e8e1ec}
+.gis-app.economic-theme .nrw-head span,.gis-app.economic-theme .nrw-section-title{color:#8050b2}
+.gis-app.economic-theme .nrw-head h3,.gis-app.economic-theme .nrw-metric strong,.gis-app.economic-theme .nrw-formula strong{color:#43384e}
+.gis-app.economic-theme .nrw-head p,.gis-app.economic-theme .nrw-input-section label>span,.gis-app.economic-theme .nrw-metric span,.gis-app.economic-theme .nrw-alert span{color:#81768a}
+.gis-app.economic-theme .nrw-input-section{border-color:#e8e1ec}
+.gis-app.economic-theme .nrw-input-section label>div{background:#fff;border-color:#ded4e5}
+.gis-app.economic-theme .nrw-input-section input{color:#40364a}
+.gis-app.economic-theme .nrw-results,.gis-app.economic-theme .nrw-metric,.gis-app.economic-theme .nrw-formula,.gis-app.economic-theme .nrw-alert{color:#51465b;background:#f6f2f8;border-color:#e7dfea}
+.gis-app.economic-theme .nrw-alert strong{color:#43384e}
+.gis-app.economic-theme .nrw-alert.warning{background:#fffaf0;border-color:#ead9b8}
+.gis-app.economic-theme .nrw-alert.critical{background:#fff5f5;border-color:#edd0d0}
+.gis-app.economic-theme .nrw-save{min-height:44px;color:#fff;background:#8f55d2;border-color:#8f55d2;font-size:13px}
+.gis-app.economic-theme .nrw-empty{color:#74697e;background:#f7f3f9;border-color:#e4dce9}
+.gis-app.economic-theme .nrw-error{color:#9d4848;background:#fff5f4;border-color:#efd5d2}

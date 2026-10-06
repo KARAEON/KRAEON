@@ -1,0 +1,38 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {baseline,simulate,municipalities} from './simulation';
+import { assetTemplateById, calculateDevelopmentDemand, defaultDevelopmentInputs, type Development } from './developments';
+test('baseline includes the configured protected reserve in closing storage',()=>{const r=simulate(baseline());assert.equal(r.supply,76);assert.equal(r.demand,85);assert.equal(r.results.length,3);assert.equal(r.gap,9);assert.ok(Math.abs(r.ending-17.6)<1e-8);});
+test('drought, supplementary supply, and allocation obey daily physical mass balance',()=>{for(let drought=0;drought<=100;drought+=10)for(const allocation of [0,50,100]){const s=baseline();for(const p of Object.values(s.inputs)){p.drought=drought;p.allocation=allocation;p.protect=true;p.allocationShares=[55,20,15,10];}for(const r of simulate(s).results){assert.ok(r.ending>=0&&r.ending<=r.capacity);assert.ok(Math.abs(r.opening+r.supply-r.allocation/(1-r.nrw)-r.ending-r.spill)<1e-8);r.coverage.forEach(c=>assert.ok(c>=0&&c<=1.000001));assert.ok(r.allocation<=r.demand+1e-8);}}});
+test('zero source output draws closing storage down to the protected reserve',()=>{const s=baseline();s.inputs.pinabacdao.supply=0;const r=simulate(s,'pinabacdao').results[0];assert.equal(r.supply,0);assert.ok(Math.abs(r.ending-r.reserveVolume)<1e-8);assert.ok(Math.abs(Math.max(0,r.ending-r.reserveVolume))<1e-8);assert.ok(r.shortage>0);});
+test('policies remain local and improve supply',()=>{const s=baseline();s.inputs.pinabacdao.drought=60;const before=simulate(s,'pinabacdao');s.inputs.pinabacdao.supplementary=true;const after=simulate(s,'pinabacdao');assert.equal(after.supply-before.supply,5);assert.ok(after.shortage<before.shortage);assert.equal(simulate(s,'catbalogan').supply,42);});
+test('reducing NRW returns recovered water to allocable supply and sector deliveries',()=>{const s=baseline();const p=s.inputs.pinabacdao;p.drought=65;const baselineResult=simulate(s,'pinabacdao');p.nrw=10;const reducedNrwResult=simulate(s,'pinabacdao');assert.ok(reducedNrwResult.allocable>baselineResult.allocable);assert.ok(reducedNrwResult.allocation>=baselineResult.allocation);assert.ok(reducedNrwResult.shortage<=baselineResult.shortage);});
+test('allocation channels redistribute unused water after a sector is fully met',()=>{const s=baseline();const p=s.inputs.pinabacdao;p.drought=100;p.sectorDemand[0]=1;p.allocationShares=[100,0,0,0];const r=simulate(s,'pinabacdao');assert.equal(r.allocations[0],1);assert.ok(Math.abs(r.allocation-r.allocable)<1e-8);assert.ok(Math.abs(r.allocations.slice(1).reduce((a,b)=>a+b,0)-(r.allocable-1))<1e-8);assert.equal(r.coverage[0],1);assert.ok(r.coverage[1]<1);});
+test('inactive areas never enter totals even with injected inputs',()=>{const s=baseline();s.inputs.basey={...s.inputs.catbalogan,supply:999999};assert.equal(simulate(s).supply,76);assert.equal(simulate(s,'basey').results.length,0);assert.equal(municipalities.filter(m=>m.activeInSimulation).length,3);});
+test('assistance cannot exceed households or budget',()=>{const s=baseline();s.inputs.pinabacdao.budget=100000000;const r=simulate(s,'pinabacdao');assert.equal(r.assisted,4500);assert.ok(r.spent<=100000000);assert.ok(r.burden>=0);});
+test('placed establishments add profile demand to their municipality and sector, and pause cleanly',()=>{
+  const scenario=baseline();
+  const mall:Development={id:'mall-1',municipalityId:'pinabacdao',templateId:'mall',position:[2,2],inputs:defaultDevelopmentInputs(assetTemplateById.mall),active:true,status:'proposed'};
+  scenario.developments=[mall];
+  const before=simulate(baseline(),'pinabacdao');
+  const after=simulate(scenario,'pinabacdao');
+  const added=calculateDevelopmentDemand(mall);
+  assert.ok(added>0);
+  assert.ok(Math.abs(after.demand-before.demand-added)<1e-9);
+  assert.ok(Math.abs(after.demands[2]-before.demands[2]-added)<1e-9);
+  assert.equal(simulate(scenario,'catbalogan').demand,simulate(baseline(),'catbalogan').demand);
+  assert.ok(after.ending<=before.ending);
+  mall.active=false;
+  assert.equal(simulate(scenario,'pinabacdao').demand,before.demand);
+});
+test('multiple developments combine and preserve physical mass balance',()=>{
+  const scenario=baseline();
+  scenario.inputs.calbayog.supply=0;
+  scenario.developments=['subdivision','hospital','factory'].map((templateId,index)=>({id:`asset-${index}`,municipalityId:'calbayog',templateId,position:[index,2] as [number,number],inputs:defaultDevelopmentInputs(assetTemplateById[templateId]),active:true,status:'proposed' as const}));
+  const result=simulate(scenario,'calbayog').results[0];
+  const expected=scenario.developments.reduce((total,item)=>total+calculateDevelopmentDemand(item),0);
+  assert.ok(Math.abs(result.developmentDemand-expected)<1e-9);
+  assert.ok(result.shortage>0);
+  assert.ok(Math.abs(result.opening+result.supply-result.allocation/(1-result.nrw)-result.ending-result.spill)<1e-8);
+  assert.equal(result.households,38000+Math.round(1200*.85));
+});
