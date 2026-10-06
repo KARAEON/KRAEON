@@ -1147,6 +1147,11 @@ export default function App() {
 
               {exploreLayout === "map-expanded" && <aside className="explore-detail-rail municipal-profile">
                 <header className="municipal-profile-head"><span>DEMOGRAPHICS / MAP</span><h3>{spatialMunicipality.name}</h3><p>Municipal profile · shared live simulation state</p></header>
+                <a className="profile-gis-link" href={`./gis.html?lgu=${encodeURIComponent(spatialMunicipality.id)}`}>
+                  <MapPin size={16}/>
+                  VIEW MAP IN GIS
+                  <ArrowUpRight size={15}/>
+                </a>
                 <div className="profile-statuses" aria-label="Municipal service conditions">
                   <span className={`profile-status stress-${waterStress.toLowerCase()}`}>Water stress <b>{waterStress}</b></span>
                   <span className={`profile-status affordability-${affordability.toLowerCase()}`}>Affordability <b>{affordability}</b></span>
