@@ -22,10 +22,13 @@ export type AssetTemplate = {
   id: string;
   name: string;
   category: string;
-  sector: 0 | 1 | 2 | 3;
+  sector: 0 | 1 | 2 | 3 | null;
   description: string;
+  placeable?: boolean;
   fields: AssetField[];
   litersPerDay: (v: Record<string, number>) => number;
+  addedSupplyMlDay?: (v: Record<string, number>) => number;
+  nrwReductionPoints?: (v: Record<string, number>) => number;
 };
 
 // Illustrative planning factors in liters/day. These are editable scenario
@@ -121,6 +124,37 @@ export const assetTemplates: AssetTemplate[] = [
     litersPerDay:v=>v.birds*.5+v.cleaning*1000+v.workers*80,
   },
   {
+    id:"pipeline",name:"Water pipeline",category:"Water infrastructure",sector:null,
+    description:"New or upgraded conveyance. Adds an editable illustrative daily flow to the shared water balance.",
+    fields:[
+      {key:"length",label:"Pipeline length",unit:"km",min:0,max:100,step:.1,initial:4},
+      {key:"flow",label:"Additional conveyed flow",unit:"ML/day",min:0,max:50,step:.1,initial:2},
+    ],
+    litersPerDay:()=>0,
+    addedSupplyMlDay:v=>v.flow,
+  },
+  {
+    id:"watershed",name:"Watershed enhancement",category:"Water infrastructure",sector:null,
+    description:"Restoration adds an editable illustrative yield to the municipality’s source supply.",
+    fields:[
+      {key:"area",label:"Restoration area",unit:"hectares",min:0,max:50000,initial:120},
+      {key:"yield",label:"Additional source yield",unit:"ML/day",min:0,max:25,step:.1,initial:1},
+    ],
+    litersPerDay:()=>0,
+    addedSupplyMlDay:v=>v.yield,
+  },
+  {
+    id:"pipeline-repair",name:"Pipeline repair",category:"Water infrastructure",sector:null,
+    description:"Repair existing municipal pipelines and any Water pipeline assets already in the plan. The NRW improvement applies across the shared network; no new structure is placed.",
+    placeable:false,
+    fields:[
+      {key:"length",label:"Pipeline repaired",unit:"km",min:0,max:100,step:.1,initial:2},
+      {key:"lossReduction",label:"NRW recovered",unit:"percentage points",min:0,max:35,step:.5,initial:4},
+    ],
+    litersPerDay:()=>0,
+    nrwReductionPoints:v=>v.lossReduction,
+  },
+  {
     id:"government",name:"Government facility",category:"Public services",sector:3,
     description:"Staff, public visits, and building services.",
     fields:[
@@ -143,17 +177,61 @@ export const assetTemplates: AssetTemplate[] = [
 ];
 
 export const assetTemplateById = Object.fromEntries(assetTemplates.map(template => [template.id,template])) as Record<string,AssetTemplate>;
+
+// Demonstration project costs in millions of pesos. They are editable planner
+// assumptions and should not be treated as estimates for a real project.
+const demoProjectCosts: Record<string, { capex: number; annualOpex: number }> = {
+  mall:{capex:1800,annualOpex:45}, subdivision:{capex:650,annualOpex:18}, hospital:{capex:2500,annualOpex:120},
+  school:{capex:300,annualOpex:14}, hotel:{capex:900,annualOpex:55}, market:{capex:220,annualOpex:15},
+  factory:{capex:1400,annualOpex:90}, poultry:{capex:90,annualOpex:6}, government:{capex:450,annualOpex:24},
+  evacuation:{capex:180,annualOpex:8}, pipeline:{capex:180,annualOpex:8}, watershed:{capex:85,annualOpex:4},
+  "pipeline-repair":{capex:28,annualOpex:1.5},
+};
+
+export function developmentCostFields(template: AssetTemplate): AssetField[] {
+  const defaults=demoProjectCosts[template.id] || {capex:0,annualOpex:0};
+  return [
+    {key:"capexMillion",label:"Capital expenditure (CAPEX)",unit:"₱ million",min:0,max:100000,step:1,initial:defaults.capex},
+    {key:"annualOpexMillion",label:"Annual operating expenditure (OPEX)",unit:"₱ million/year",min:0,max:10000,step:0.1,initial:defaults.annualOpex},
+  ];
+}
+
 export function defaultDevelopmentInputs(template: AssetTemplate): Record<string,number> {
-  return Object.fromEntries(template.fields.map(field => [field.key,field.initial]));
+  return Object.fromEntries([...template.fields,...developmentCostFields(template)].map(field => [field.key,field.initial]));
 }
 export function calculateDevelopmentDemand(development: Pick<Development,"templateId" | "inputs">): number {
   const template=assetTemplateById[development.templateId];
-  if(!template) return 0;
+  if(!template || template.sector===null) return 0;
   const values=Object.fromEntries(template.fields.map(field => {
     const raw=development.inputs[field.key];
     return [field.key,Number.isFinite(raw)?Math.max(field.min,Math.min(field.max,raw)):field.initial];
   }));
   return Math.max(0,template.litersPerDay(values))/1_000_000;
+}
+
+export function calculateInfrastructureImpact(development: Pick<Development,"templateId" | "inputs">, drought = 0) {
+  const template=assetTemplateById[development.templateId];
+  if(!template) return {addedSupplyMlDay:0,nrwReductionPoints:0};
+  const values=Object.fromEntries(template.fields.map(field=>{
+    const raw=development.inputs[field.key];
+    return [field.key,Number.isFinite(raw)?Math.max(field.min,Math.min(field.max,raw)):field.initial];
+  }));
+  const droughtFactor=1-Math.max(0,Math.min(100,drought))/100;
+  return {
+    addedSupplyMlDay:Math.max(0,template.addedSupplyMlDay?.(values) || 0)*droughtFactor,
+    nrwReductionPoints:Math.max(0,template.nrwReductionPoints?.(values) || 0),
+  };
+}
+
+export function developmentFinancials(development: Pick<Development,"templateId" | "inputs">) {
+  const template=assetTemplateById[development.templateId];
+  if(!template) return {capexMillion:0,annualOpexMillion:0};
+  const fields=developmentCostFields(template);
+  const read=(field:AssetField)=>{
+    const raw=development.inputs[field.key];
+    return Number.isFinite(raw)?Math.max(field.min,Math.min(field.max,raw)):field.initial;
+  };
+  return {capexMillion:read(fields[0]),annualOpexMillion:read(fields[1])};
 }
 export function validDevelopment(value: unknown): value is Development {
   if(!value || typeof value!=="object") return false;

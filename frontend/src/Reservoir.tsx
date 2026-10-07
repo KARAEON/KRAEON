@@ -10,6 +10,7 @@ type ReservoirProps = {
   paused: boolean;
   reset: number;
   showDetails: boolean;
+  showOverview: boolean;
   onToggleDetails: () => void;
 };
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, Number.isFinite(v) ? v : min));
@@ -120,7 +121,7 @@ function Foam({ time, strength }: { time: { current: number }; strength: number 
   return <instancedMesh ref={ref} args={[undefined,undefined,72]} frustumCulled={false}><icosahedronGeometry args={[1,0]} /><meshStandardMaterial color="#e2ffff" roughness={.45} /></instancedMesh>;
 }
 
-function Scene({ usable, paused, reset, onToggleDetails }: { usable: number; paused: boolean; reset: number; onToggleDetails: () => void }) {
+function Scene({ level, usable, paused, reset, onToggleDetails }: { level: number; usable: number; paused: boolean; reset: number; onToggleDetails: () => void }) {
   const time = useRef(0);
   const controls = useRef<OrbitControlsImpl>(null);
   const { camera, size } = useThree();
@@ -149,7 +150,7 @@ function Scene({ usable, paused, reset, onToggleDetails }: { usable: number; pau
     g.computeVertexNormals(); return g;
   }, []);
   useEffect(() => () => { terrain.dispose(); lake.dispose(); river.dispose(); fall.dispose(); }, [terrain,lake,river,fall]);
-  useFrame((_,delta) => { if (!paused) time.current += Math.min(delta,.05); });
+  useFrame((_,delta) => { if (!paused && level > .005) time.current += Math.min(delta,.05); });
   const zoom = Math.min(size.width/19,size.height/15);
   useEffect(() => {
     const orbit=controls.current;
@@ -168,7 +169,7 @@ function Scene({ usable, paused, reset, onToggleDetails }: { usable: number; pau
     <mesh position={[0,-1.43,0]} scale={[1,1,.947]} receiveShadow><cylinderGeometry args={[6.75,6.75,.15,45]} /><meshStandardMaterial color="#8e8e98" flatShading /></mesh>
     <mesh geometry={lake} position={[0,1.65,0]} rotation={[-Math.PI/2,0,0]} receiveShadow><meshStandardMaterial color="#bfc2c0" roughness={1} side={THREE.DoubleSide} /></mesh>
     <mesh geometry={river} position={[0,-.28,0]} rotation={[-Math.PI/2,0,0]} receiveShadow><meshStandardMaterial color="#b8bfbd" roughness={1} side={THREE.DoubleSide} /></mesh>
-    {usable>.005 && <Water geometry={lake} position={[0,1.78+usable*1.12,0]} rotation={[-Math.PI/2,0,0]} opacity={1} time={time} />}
+    {level>.005 && <Water geometry={lake} position={[0,1.78+level*1.12,0]} rotation={[-Math.PI/2,0,0]} opacity={1} time={time} />}
     <Water geometry={river} position={[0,-.06,0]} rotation={[-Math.PI/2,0,0]} opacity={strength} time={time} />
     {[-3.55,3.55].map(x => <Box key={x} position={[x,1.45,.35]} size={[3.2,2.9,.62]} onClick={select} />)}
     {[-4.7,-3.8,-2.9,2.9,3.8,4.7].map(x => <Box key={x} position={[x,1.4,.663]} size={[.014,2.6,.006]} color="#c7c8c6" onClick={select} />)}
@@ -206,10 +207,11 @@ class SceneBoundary extends Component<{ children: ReactNode },{ failed: boolean 
   render() { return this.state.failed ? <p className="dam-webgl-fallback" role="status">The 3D view is unavailable. Enable WebGL or try another browser. Reservoir controls and details are still available.</p> : this.props.children; }
 }
 
-export default function Reservoir({ level, protectedLevel=0, paused, reset, showDetails, onToggleDetails }: ReservoirProps) {
+export default function Reservoir({ level, protectedLevel=0, paused, reset, showDetails, showOverview, onToggleDetails }: ReservoirProps) {
   const actualPercent=clamp(level*100,0,100), protectedPercent=clamp(protectedLevel*100,0,100);
-  // Keep the existing usable-storage visualization above the protected reserve.
+  // Show actual closing storage while reporting usable storage separately.
   const percent=protectedPercent>=100 ? 0 : clamp((actualPercent-protectedPercent)/(100-protectedPercent)*100,0,100);
+  const usablePercent=clamp(actualPercent-protectedPercent,0,100);
   const [viewReset,setViewReset]=useState(0);
   const [reducedMotion,setReducedMotion]=useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const [contextLost,setContextLost]=useState(false);
@@ -219,20 +221,20 @@ export default function Reservoir({ level, protectedLevel=0, paused, reset, show
     const media=window.matchMedia("(prefers-reduced-motion: reduce)"), update=() => setReducedMotion(media.matches);
     media.addEventListener("change",update); return () => media.removeEventListener("change",update);
   },[]);
-  return <section className="dam-system-model dam-3d-model" data-level={Math.round(actualPercent)} data-usable-level={Math.round(percent)} data-reset={reset} aria-label={`Interactive 3D reservoir: ${Math.round(actualPercent)} percent closing storage, ${Math.round(protectedPercent)} percent protected reserve, ${Math.round(percent)} percent usable storage above reserve.`}
+  return <section className={`dam-system-model dam-3d-model${actualPercent <= .5 ? ' is-empty' : ''}${paused || reducedMotion ? ' is-paused' : ''}`} data-level={Math.round(actualPercent)} data-usable-level={Math.round(usablePercent)} data-reset={reset} aria-label={`Interactive 3D reservoir: ${Math.round(actualPercent)} percent closing storage, ${Math.round(protectedPercent)} percent protected reserve, ${Math.round(usablePercent)} percent usable storage above reserve.`}
     onPointerDownCapture={e => { pointerStart.current=[e.clientX,e.clientY]; dragged.current=false; }}
     onPointerMoveCapture={e => { if(e.buttons && Math.hypot(e.clientX-pointerStart.current[0],e.clientY-pointerStart.current[1])>4) dragged.current=true; }}>
     <SceneBoundary>
       <Canvas orthographic shadows dpr={[1,1.5]} camera={{ position:[-10,10,14],zoom:40,near:.1,far:200 }} gl={{ antialias:true }} onCreated={({ gl }) => { gl.setClearColor("#f7f8f7"); }} onContextMenu={e => e.preventDefault()}>
         <ContextWatch onChange={setContextLost} />
-        <Scene usable={percent/100} paused={paused||reducedMotion||contextLost} reset={reset+viewReset} onToggleDetails={() => { if(!dragged.current) onToggleDetails(); }} />
+        <Scene level={actualPercent/100} usable={percent/100} paused={paused||reducedMotion||contextLost} reset={reset+viewReset} onToggleDetails={() => { if(!dragged.current) onToggleDetails(); }} />
       </Canvas>
     </SceneBoundary>
     {contextLost && <p className="dam-webgl-fallback" role="status">The 3D graphics connection was lost. Reload to restore the view. Reservoir controls and details are still available.</p>}
     <span className="dam-3d-hint">Drag to rotate · Scroll to zoom</span>
     <div className="dam-3d-controls">
       <button type="button" onClick={() => setViewReset(v => v+1)}>Reset view</button>
-      <button type="button" aria-expanded={showDetails} onClick={onToggleDetails}>{showDetails ? "Hide details" : "Reservoir details"}</button>
+      <button type="button" aria-expanded={showOverview || showDetails} onClick={onToggleDetails}>{showOverview || showDetails ? "Hide summary and details" : "Show summary and details"}</button>
     </div>
   </section>;
 }

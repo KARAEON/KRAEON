@@ -170,7 +170,7 @@ export function FlowDiagram({ result }: { result: Result }) {
       <svg
         viewBox="0 0 710 240"
         role="img"
-        aria-label="Water flow from sources through local utilities and storage to four demand sectors. Ribbon width represents ML per day."
+        aria-label="Water flow from sources through local utilities and storage to sector allocations. Ribbon width represents ML per day."
       >
         <text x="8" y="20" className="flow-heading">
           Water sources
@@ -250,7 +250,7 @@ export function FlowDiagram({ result }: { result: Result }) {
       </svg>
       <p className="flow-note">
         Storage contribution:{" "}
-        {Math.max(0, result.allocation - result.supply).toFixed(1)} ML over one
+        {result.results.reduce((total, item) => total + Math.max(0, item.allocation / (1 - item.nrw) - item.supply), 0).toFixed(1)} ML withdrawn over one
         day. Remaining storage: {result.ending.toFixed(1)} ML.
       </p>
     </div>
