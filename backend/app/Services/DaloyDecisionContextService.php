@@ -71,6 +71,18 @@ class DaloyDecisionContextService
                 $valuationService
             );
 
+        $affordability = data_get($state, 'affordability', []);
+        $affordability['average_household_tariff_at_low_threshold_php_m3'] = $this->tariffAtThreshold(
+            data_get($affordability, 'avg_household_income_php'),
+            data_get($affordability, 'monthly_consumption_m3'),
+            data_get($affordability, 'policy_thresholds.low_below_pct')
+        );
+        $affordability['low_income_tariff_at_low_threshold_php_m3'] = $this->tariffAtThreshold(
+            data_get($affordability, 'low_income_monthly_income_php'),
+            data_get($affordability, 'monthly_consumption_m3'),
+            data_get($affordability, 'policy_thresholds.low_below_pct')
+        );
+
         return [
             'location' => [
                 'psgc_code' => $barangay->psgc_code,
@@ -114,22 +126,7 @@ class DaloyDecisionContextService
                 ),
             ],
 
-            'affordability' => [
-                'class' => data_get(
-                    $state,
-                    'affordability.affordability_class'
-                ),
-
-                'low_income_class' => data_get(
-                    $state,
-                    'affordability.low_income_affordability_class'
-                ),
-
-                'proposed_water_burden_pct' => data_get(
-                    $state,
-                    'affordability.proposed_water_burden_pct'
-                ),
-            ],
+            'affordability' => $affordability,
 
             'demand_response' => data_get(
                 $state,
@@ -177,5 +174,18 @@ class DaloyDecisionContextService
                 ],
             ],
         ];
+    }
+
+    private function tariffAtThreshold(mixed $income, mixed $monthlyConsumption, mixed $thresholdPct): ?float
+    {
+        $income = (float) $income;
+        $monthlyConsumption = (float) $monthlyConsumption;
+        $thresholdPct = (float) $thresholdPct;
+
+        if ($income <= 0 || $monthlyConsumption <= 0 || $thresholdPct < 0) {
+            return null;
+        }
+
+        return round(($income * $thresholdPct / 100) / $monthlyConsumption, 2);
     }
 }

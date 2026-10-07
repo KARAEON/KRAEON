@@ -177,6 +177,46 @@ class DaloyDecisionController extends Controller
                             $state,
                             'affordability.affordability_class'
                         ),
+
+                        'current_tariff_php_m3' => data_get(
+                            $state,
+                            'affordability.current_tariff_php_m3'
+                        ),
+
+                        'proposed_tariff_php_m3' => data_get(
+                            $state,
+                            'affordability.proposed_tariff_php_m3'
+                        ),
+
+                        'monthly_consumption_m3' => data_get(
+                            $state,
+                            'affordability.monthly_consumption_m3'
+                        ),
+
+                        'avg_household_income_php' => data_get(
+                            $state,
+                            'affordability.avg_household_income_php'
+                        ),
+
+                        'low_income_monthly_income_php' => data_get(
+                            $state,
+                            'affordability.low_income_monthly_income_php'
+                        ),
+
+                        'low_affordability_threshold_pct' => data_get(
+                            $state,
+                            'affordability.policy_thresholds.low_below_pct'
+                        ),
+
+                        'current_water_burden_pct' => data_get(
+                            $state,
+                            'affordability.current_water_burden_pct'
+                        ),
+
+                        'low_income_water_burden_pct' => data_get(
+                            $state,
+                            'affordability.low_income_water_burden_pct'
+                        ),
                     ];
                 } catch (\Throwable $error) {
                     /*
@@ -187,8 +227,65 @@ class DaloyDecisionController extends Controller
                 }
             }
 
+            $tariffAffordabilityRows = array_values(array_filter(array_map(
+                function (array $state): ?array {
+                    $monthlyConsumption = (float) ($state['monthly_consumption_m3'] ?? 0);
+                    $lowIncome = (float) ($state['low_income_monthly_income_php'] ?? 0);
+                    $averageIncome = (float) ($state['avg_household_income_php'] ?? 0);
+                    $threshold = (float) ($state['low_affordability_threshold_pct'] ?? 0);
+
+                    if ($monthlyConsumption <= 0) {
+                        return null;
+                    }
+
+                    return [
+                        'lgu' => $state['lgu'],
+                        'barangay' => $state['barangay'],
+                        'current_tariff_php_m3' => $state['current_tariff_php_m3'],
+                        'proposed_tariff_php_m3' => $state['proposed_tariff_php_m3'],
+                        'current_water_burden_pct' => $state['current_water_burden_pct'],
+                        'low_income_water_burden_pct' => $state['low_income_water_burden_pct'],
+                        'configured_low_threshold_pct' => $threshold,
+                        'average_household_tariff_at_low_threshold_php_m3' => $averageIncome > 0
+                            ? round(($averageIncome * $threshold / 100) / $monthlyConsumption, 2)
+                            : null,
+                        'low_income_tariff_at_low_threshold_php_m3' => $lowIncome > 0
+                            ? round(($lowIncome * $threshold / 100) / $monthlyConsumption, 2)
+                            : null,
+                    ];
+                },
+                $states
+            ), fn (?array $row): bool => $row !== null));
+
+            $lowIncomeAffordableTariffs = array_values(array_filter(
+                array_column($tariffAffordabilityRows, 'low_income_tariff_at_low_threshold_php_m3'),
+                fn ($value): bool => is_numeric($value)
+            ));
+            $currentTariffs = array_column($tariffAffordabilityRows, 'current_tariff_php_m3');
+            $averageHouseholdTariffs = array_column($tariffAffordabilityRows, 'average_household_tariff_at_low_threshold_php_m3');
+            $configuredThresholds = array_values(array_unique(array_column($tariffAffordabilityRows, 'configured_low_threshold_pct')));
+            sort($configuredThresholds, SORT_NUMERIC);
+
             $generalContext = [
                 'pilot_area_barangay_count' => count($states),
+
+                'tariff_affordability' => [
+                    'records_with_monthly_consumption' => count($tariffAffordabilityRows),
+                    'current_tariff_median_php_m3' => $this->medianNumeric($currentTariffs),
+                    'average_household_tariff_at_configured_low_threshold_median_php_m3' => $this->medianNumeric($averageHouseholdTariffs),
+                    'low_income_tariff_at_configured_low_threshold_median_php_m3' => $this->medianNumeric($lowIncomeAffordableTariffs),
+                    'configured_low_affordability_threshold_pct' => $configuredThresholds,
+                    'lowest_low_income_tariff_at_configured_low_threshold_php_m3' => $lowIncomeAffordableTariffs[0] ?? null,
+                    'highest_low_income_tariff_at_configured_low_threshold_php_m3' => $lowIncomeAffordableTariffs === []
+                        ? null
+                        : $lowIncomeAffordableTariffs[count($lowIncomeAffordableTariffs) - 1],
+                    'most_affordable_barangays' => $this->rankBy(
+                        $tariffAffordabilityRows,
+                        'low_income_tariff_at_low_threshold_php_m3',
+                        true
+                    ),
+                    'method' => 'Affordable tariff ceiling = low-income monthly income × configured low affordability threshold ÷ monthly water consumption. This is a calculated prototype benchmark, not a legally mandated tariff.',
+                ],
 
                 'lowest_usable_supply' => $this->rankBy(
                     $states,
@@ -303,7 +400,8 @@ For an ambiguous question, use answer_status: "clarification" and ask what the u
 Missing data and out-of-scope questions are successful chat replies, not technical errors.
 
 GENERAL CONTEXT RULE:
-If no barangay is selected, use GENERAL CONTEXT to answer questions about the pilot area.
+If no barangay is selected, use GENERAL CONTEXT to answer questions about the pilot area,
+including its tariff_affordability summary.
 
 Examples:
 - barangay with lowest usable water
@@ -313,6 +411,17 @@ Examples:
 - highest demand
 
 Do NOT tell the user to select a barangay when GENERAL CONTEXT already contains enough information.
+
+TARIFF AFFORDABILITY:
+Use the supplied tariff and affordability figures. With no barangay selected, use
+general_context.tariff_affordability. With a barangay selected, use
+selected_context.affordability. The context includes tariff ceilings calculated from
+household income, monthly consumption, and the configured low affordability threshold.
+Give the ceiling as a prototype benchmark, explain that one pilot-wide price cannot fit
+every household, and use the low-income ceiling when discussing a price intended to
+protect lower-income households. These thresholds are project settings, not universal
+legal limits. Do not say tariff data is missing or ask for supply cost or demand when
+these figures are present. Do not infer demand response from a tariff change.
 
 NO. 23 — RECOMMENDATION FORMAT
 
@@ -665,6 +774,22 @@ PROMPT;
             'thanks', 'thank you', 'ty' => 'You are welcome! Let me know if you have another question.',
             default => null,
         };
+    }
+
+    private function medianNumeric(array $values): ?float
+    {
+        $values = array_values(array_filter($values, fn ($value): bool => is_numeric($value)));
+        sort($values, SORT_NUMERIC);
+
+        if ($values === []) {
+            return null;
+        }
+
+        $middleIndex = intdiv(count($values), 2);
+
+        return count($values) % 2 === 1
+            ? (float) $values[$middleIndex]
+            : round(((float) $values[$middleIndex - 1] + (float) $values[$middleIndex]) / 2, 2);
     }
 
     private function rankBy(
