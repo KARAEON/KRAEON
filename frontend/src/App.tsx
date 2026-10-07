@@ -10,7 +10,8 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  CircleHelp,
+  ChevronUp,
+  ChevronDown,
   Copy,
   Database,
   Download,
@@ -30,6 +31,7 @@ import {
   Plus,
   RotateCcw,
   Save,
+  Settings as SettingsIcon,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
@@ -43,17 +45,29 @@ import {
   municipalities,
   sectorColors,
   sectorNames,
+  sum,
   simulate,
   simulateMunicipality,
   type Inputs,
+  type PriorityOrder,
+  type SectorIndex,
   type Scenario,
 } from "./engine/simulation";
 import { FlowDiagram, SamarMap, SectionHeading } from "./Visuals";
 import Reservoir from "./Reservoir";
 import CityMaquette from "./CityMaquette";
 import DevelopmentPlanner from "./DevelopmentPlanner";
-import { validDevelopment, type Development } from "./engine/developments";
+import { type Development } from "./engine/developments";
+import daloyIcon from "./assets/DALOY-ICON.png";
+import { readSavedScenarios, persistSavedScenarios } from "./engine/scenarios";
 const pilots = municipalities.filter((m) => m.activeInSimulation);
+type TextSize = "small" | "default" | "large" | "extra-large";
+const textSizeOptions: { value: TextSize; label: string; sample: string }[] = [
+  { value: "small", label: "Small", sample: "14px" },
+  { value: "default", label: "Default", sample: "16px" },
+  { value: "large", label: "Large", sample: "19px" },
+  { value: "extra-large", label: "Extra large", sample: "22px" },
+];
 type ExploreLayout = "split" | "map-expanded" | "planning-expanded";
 const number = (v: number) =>
   v.toLocaleString("en-US", { maximumFractionDigits: 1 });
@@ -81,41 +95,8 @@ const baselineScenario = baseline();
 const droughtScenario = baseline("drought", "Drought response");
 droughtScenario.inputs.pinabacdao.drought = 40;
 function readSaved(): Scenario[] {
-  try {
-    const raw = JSON.parse(
-      localStorage.getItem("water-economics-scenarios-v1") || "[]",
-    );
-    if (!Array.isArray(raw)) return [];
-    return raw.filter(
-      (s) =>
-        typeof s.id === "string" &&
-        typeof s.name === "string" &&
-        pilots.every((m) => {
-          const p = s.inputs?.[m.id];
-          return (
-            p &&
-            Object.values(p).every(
-              (v) =>
-                typeof v === "boolean" ||
-                (typeof v === "number" && Number.isFinite(v) && v >= 0) ||
-                (Array.isArray(v) &&
-                  v.every(
-                    (n) =>
-                      typeof n === "number" && Number.isFinite(n) && n >= 0,
-                  )),
-            ) &&
-            p.income > 0 &&
-            p.drought <= 100 &&
-            p.allocation <= 100 &&
-            p.sourceOutputs.length === m.sources.length &&
-            p.sectorDemand.length === 4 &&
-            (!p.allocationShares || p.allocationShares.length === 4)
-          );
-        }),
-    ).map((s) => ({...s, inputs: Object.fromEntries(pilots.map((m) => [m.id, {...s.inputs[m.id], nrw: s.inputs[m.id].nrw ?? 28, reserve: s.inputs[m.id].reserve ?? 22, allocationShares: s.inputs[m.id].allocationShares || [25,25,25,25]}])), developments:Array.isArray(s.developments)?s.developments.filter(validDevelopment):[]}));
-  } catch {
-    return [];
-  }
+  try { return readSavedScenarios(localStorage); }
+  catch { return []; }
 }
 function Slider({
   label,
@@ -134,12 +115,15 @@ function Slider({
   unit?: string;
   onChange: (v: number) => void;
 }) {
+  const safeMaximum = Math.max(min, Number.isFinite(max) ? max : min);
+  const safeValue = Number.isFinite(value) ? Math.max(min, Math.min(safeMaximum, value)) : min;
+  const rangePercent = safeMaximum > min ? ((safeValue - min) / (safeMaximum - min)) * 100 : 0;
   return (
     <label className="slider-control">
       <span>
         {label}
         <strong>
-          {number(value)}
+          {number(safeValue)}
           {unit}
         </strong>
       </span>
@@ -147,13 +131,13 @@ function Slider({
         type="range"
         aria-label={label}
         min={min}
-        max={max}
+        max={safeMaximum}
         step={step}
-        value={value}
+        value={safeValue}
         onChange={(e) => onChange(+e.target.value)}
         style={
           {
-            "--range": `${((value - min) / (max - min)) * 100}%`,
+            "--range": `${rangePercent}%`,
           } as React.CSSProperties
         }
       />
@@ -194,6 +178,13 @@ export default function App() {
       try { return localStorage.getItem("water-economics-appearance-v1") === "night" ? "night" : "day"; }
       catch { return "day"; }
     }),
+    [textSize, setTextSize] = useState<TextSize>(() => {
+      try {
+        const saved = localStorage.getItem("daloy-text-size-v1");
+        return textSizeOptions.some((option) => option.value === saved) ? saved as TextSize : "large";
+      } catch { return "large"; }
+    }),
+    [settingsOpen, setSettingsOpen] = useState(false),
     [scope, setScope] = useState("combined"),
     [scenarios, setScenarios] = useState<Scenario[]>(() => [
       baselineScenario,
@@ -204,6 +195,7 @@ export default function App() {
     [controlTab, setControlTab] = useState("Sources"),
     [view, setView] = useState("Reservoir"),
     [reservoirDetailsOpen, setReservoirDetailsOpen] = useState(false),
+    [overviewVisible, setOverviewVisible] = useState(false),
     [sector, setSector] = useState(0),
     [notice, setNotice] = useState(""),
     [modal, setModal] = useState(false),
@@ -228,49 +220,33 @@ export default function App() {
     document.body.dataset.appearance = appearance;
     try { localStorage.setItem("water-economics-appearance-v1", appearance); } catch { /* Appearance still applies for this session. */ }
   }, [appearance]);
+  useEffect(() => {
+    document.documentElement.dataset.textSize = textSize;
+    try { localStorage.setItem("daloy-text-size-v1", textSize); } catch { /* Keep the chosen size for this session. */ }
+  }, [textSize]);
   const handleDamDetailsToggle = () => {
-    if (!controlsOpen && !impactOpen && !reservoirDetailsOpen) {
-      setControlsOpen(true);
-      setImpactOpen(true);
-      setReservoirDetailsOpen(true);
-      return;
-    }
-    setReservoirDetailsOpen((open) => !open);
+    const open = !overviewVisible;
+    setOverviewVisible(open);
+    setControlsOpen(open);
+    setImpactOpen(open);
+    setReservoirDetailsOpen(open);
   };
   const scenario = scenarios.find((s) => s.id === scenarioId) || scenarios[0];
   const result = useMemo(() => simulate(scenario, scope), [scenario, scope]);
   const baselineResult = useMemo(() => simulate(baselineScenario, scope), [scope]);
   const selected = pilots.filter((m) => scope === "combined" || m.id === scope),
     p = scenario.inputs[selected[0].id];
-  const scopeName = scope === "combined" ? "Combined MVP" : selected[0].name;
+  const scopeName = scope === "combined" ? "Provincial overview" : selected[0].name;
   const protectedReserveVolume = result.results.reduce((total, item) => total + item.reserveVolume, 0);
-  const availableStorageBuffer = result.results.reduce((total, item) => total + Math.max(0, item.ending - item.reserveVolume), 0);
-  const blendedNrw = result.supply > 0 ? result.results.reduce((total, item) => total + item.supply * item.nrw, 0) / result.supply : 0;
-  const storageCoverDays = result.gap > 0 ? availableStorageBuffer / (result.gap / Math.max(.2, 1 - blendedNrw)) : 0;
-  const currentSectorShortfalls = sectorNames.map((name, index) => ({name, unmet: Math.max(0, result.demands[index] - result.allocations[index])})).sort((a,b) => b.unmet - a.unmet);
-  const allocationShareTotal = p.allocationShares.reduce((sum, share) => sum + share, 0);
-  const setAllocationShare = (index: number, requested: number) => {
-    const value = Math.max(0, Math.min(100, requested));
-    const remaining = 100 - value;
-    const otherIndices = [0, 1, 2, 3].filter((item) => item !== index);
-    const previousTotal = otherIndices.reduce((sum, item) => sum + p.allocationShares[item], 0);
-    const shares = [...p.allocationShares] as Inputs["allocationShares"];
-    let assigned = 0;
-    otherIndices.forEach((item, position) => {
-      const next = position === otherIndices.length - 1 ? remaining - assigned : Math.round(remaining * (previousTotal ? p.allocationShares[item] / previousTotal : 1 / otherIndices.length));
-      shares[item] = next;
-      assigned += next;
-    });
-    shares[index] = value;
-    update({ allocationShares: shares });
-  };
+  const currentSectorShortfalls = sectorNames.map((name, index) => ({name, unmet: result.unmetBySector[index]})).sort((a,b) => b.unmet - a.unmet);
+  const allocationRequestInputs = sectorNames.map((_, index) => sum(selected.map((m) => scenario.inputs[m.id].allocationTargets[index])));
   const spatialMunicipality = scope === "combined" ? pilots[2] : selected[0];
   const spatialResult = simulate(scenario, spatialMunicipality.id);
   const spatialStorage = spatialResult.results[0];
   const spatialDevelopments = (scenario.developments || []).filter(item=>item.municipalityId===spatialMunicipality.id);
   const spatialInput = scenario.inputs[spatialMunicipality.id];
   const nrwBaseline = baselineScenario.inputs[spatialMunicipality.id].nrw;
-  const spatialAtBaselineNrw = simulateMunicipality(spatialMunicipality, {...spatialInput, nrw: nrwBaseline}, spatialDevelopments);
+  const spatialAtBaselineNrw = simulateMunicipality(spatialMunicipality, {...spatialInput, nrw: nrwBaseline}, spatialDevelopments, scenario.priorityOrder);
   const grossForNiw = spatialResult.supply + spatialMunicipality.opening;
   const baselineSourceLoss = grossForNiw * nrwBaseline / 100;
   const scenarioSourceLoss = grossForNiw * spatialInput.nrw / 100;
@@ -279,9 +255,8 @@ export default function App() {
   const nrwAllocationGain = spatialResult.allocation - spatialAtBaselineNrw.allocation;
   const nrwPercentagePointChange = nrwBaseline - spatialInput.nrw;
   const nrwValueEstimate = Math.max(0, nrwAllocationGain) * 1000 * spatialInput.price;
-  const spatialStorageUsed = Math.max(0, spatialResult.allocation - spatialResult.supply);
-  const spatialCoverage = spatialResult.demand > 0 ? spatialResult.allocation / spatialResult.demand : 0;
-  const baselineDemand = spatialMunicipality.demand.reduce((total, value) => total + value, 0);
+  const spatialStorageUsed = spatialResult.results.reduce((total, item) => total + Math.max(0, item.allocation / (1 - item.nrw) - item.supply), 0);
+  const spatialCoverage = spatialResult.demand > 0 ? Math.min(1, spatialResult.allocation / spatialResult.demand) : 0;
   const waterStress = spatialResult.shortage <= .05 ? "Low" : spatialResult.shortage / Math.max(.1, spatialResult.demand) >= .2 ? "High" : "Moderate";
   const affordability = spatialResult.burden <= 3 ? "Low" : spatialResult.burden <= 5 ? "Moderate" : "High";
   const tariffBands = (burden: number) => burden <= 3 ? {label:"Low",color:"#2b9d78"} : burden <= 5 ? {label:"Moderate",color:"#e2b13c"} : {label:"High",color:"#d95757"};
@@ -296,10 +271,11 @@ export default function App() {
   const tariffImpactColors = Object.fromEntries(tariffImpact.map(item=>[item.key,item.color]));
   const profileStats = [
     ["Modeled households", number(spatialResult.households), spatialResult.households === spatialMunicipality.households ? "DEMO INPUT" : "INCLUDES PLACED HOMES"],
-    ["Baseline demand", `${number(baselineDemand)} ML/day`, "ESTIMATED"],
-    ["Supply capacity", `${number(spatialResult.supply)} ML/day`, "SIMULATED · GROSS"],
+    ["Estimated baseline demand", `${number(spatialResult.demand)} ML/day`, "DEMO ESTIMATE"],
+    ["Water allocated", `${number(spatialResult.allocation)} ML/day`, "CURRENT SCENARIO"],
+    ["Source inflow", `${number(spatialResult.supply)} ML/day`, "SIMULATED · GROSS"],
     ["Allocable water", `${number(spatialResult.allocable)} ML/day`, "AFTER LOSSES & RESERVE"],
-    ["Unmet demand", `${number(spatialResult.shortage)} ML/day`, "LIVE SIMULATION"],
+    ["Unmet estimated demand", `${number(spatialResult.shortage)} ML/day`, "CURRENT SCENARIO"],
   ] as const;
   const facilityInventory = [
     ["Households / service connections", `${number(spatialMunicipality.households)}`, "DEMO INPUT"],
@@ -314,6 +290,9 @@ export default function App() {
     name,
     value: spatialResult.demands[i],
     allocation: spatialResult.allocations[i],
+    request: spatialResult.allocationRequests[i],
+    unmet: spatialResult.unmetBySector[i],
+    excess: spatialResult.excessAllocations[i],
     coverage: spatialResult.coverage[i],
     color: sectorColors[i],
     icon: [Home, Leaf, Factory, Landmark][i],
@@ -328,19 +307,21 @@ export default function App() {
     radius: 6 + Math.sqrt(item.value / balanceDemandMax) * 13,
   }));
   const spatialSectorDetails: Record<string, { summary: string; facts: Array<[string, string]> }> = Object.fromEntries(spatialDemands.map((item) => [item.name, {
-    summary: `${item.name} in the illustrative ${spatialMunicipality.name} model. The 3D buildings use the current allocation result.`,
+    summary: `${item.name} in the illustrative ${spatialMunicipality.name} model. The 3D buildings reflect water allocation served.`,
     facts: [
       ...(item.name === "Households" ? [["Modeled households", number(spatialResult.households)] as [string, string]] : []),
-      ["Estimated demand", `${number(item.value)} ML/day`],
+      ["Estimated baseline demand", `${number(item.value)} ML/day`],
+      ["Allocation requested", `${number(item.request)} ML/day`],
       ["Water allocated", `${number(item.allocation)} ML/day`],
-      ["Demand unmet", `${number(Math.max(0, item.value - item.allocation))} ML/day`],
-      ["Demand covered", `${Math.round(item.coverage * 100)}%`],
+      ["Estimated demand unmet", `${number(item.unmet)} ML/day`],
+      ...(item.excess > .05 ? [["Allocation above estimate", `${number(item.excess)} ML/day`] as [string, string]] : []),
+      ["Estimated demand covered", `${Math.round(item.coverage * 100)}%`],
     ],
   }])) as Record<string, { summary: string; facts: Array<[string, string]> }>;
   const expandedSpatialDemand = spatialDemands.find((item) => item.name === expandedSpatialSector);
-  const unmetSectors = spatialDemands.map((item) => ({...item, unmet: Math.max(0, item.value - item.allocation)})).filter((item) => item.unmet > .05).sort((a,b) => b.unmet - a.unmet);
+  const unmetSectors = spatialDemands.filter((item) => item.unmet > .05).sort((a,b) => b.unmet - a.unmet);
   const largestUnmet = unmetSectors[0];
-  const daloyQuestions = ["Where is the imbalance?", "Who has unmet demand?", "What is causing the shortage?", "What should I test next?"];
+  const daloyQuestions = ["Where is the imbalance?", "Which sectors have unmet demand?", "What is causing the shortage?", "What should I test next?"];
   const selectDaloyQuestion = (question: string) => {
     setDaloyQuestion(question);
     if (question === daloyQuestions[0]) return;
@@ -359,21 +340,17 @@ export default function App() {
         JSON.stringify(scenario.inputs[m.id][key]) !== JSON.stringify(p[key]),
     );
   const update = (patch: Partial<Inputs>) =>
-    setScenarios((list) =>
-      list.map((s) =>
-        s.id === scenario.id
-          ? {
-              ...s,
-              inputs: {
-                ...s.inputs,
-                ...Object.fromEntries(
-                  selected.map((m) => [m.id, { ...s.inputs[m.id], ...patch }]),
-                ),
-              },
-            }
-          : s,
-      ),
-    );
+    setScenarios((list) => list.map((s) => {
+      if (s.id !== scenario.id) return s;
+      const nextInputs = { ...s.inputs };
+      selected.forEach((m) => {
+        const next = { ...s.inputs[m.id], ...patch };
+        const allocationLimit = simulateMunicipality(m, next, s.developments || []).allocable;
+        next.allocationTargets = next.allocationTargets.map((value) => Math.min(value, allocationLimit)) as Inputs["allocationTargets"];
+        nextInputs[m.id] = next;
+      });
+      return { ...s, inputs: nextInputs };
+    }));
   const updateMunicipal = (id: string, patch: Partial<Inputs>) =>
     setScenarios((list) =>
       list.map((s) =>
@@ -385,14 +362,40 @@ export default function App() {
           : s,
       ),
     );
+  const setSectorAllocation = (index: number, requestedTotal: number) =>
+    setScenarios((list) => list.map((s) => {
+      if (s.id !== scenario.id) return s;
+      const limits = selected.map((m) => result.results.find((item) => item.id === m.id)?.allocable || 0);
+      const totalLimit = sum(limits);
+      const boundedTotal = Math.min(Math.max(0, requestedTotal), totalLimit);
+      const nextInputs = { ...s.inputs };
+      selected.forEach((m, position) => {
+        const values = [...s.inputs[m.id].allocationTargets] as Inputs["allocationTargets"];
+        values[index] = totalLimit > 1e-9 ? boundedTotal * limits[position] / totalLimit : 0;
+        nextInputs[m.id] = { ...s.inputs[m.id], allocationTargets: values };
+      });
+      return { ...s, inputs: nextInputs };
+    }));
+  const movePriority = (position: number, direction: -1 | 1) =>
+    setScenarios((list) => list.map((s) => {
+      if (s.id !== scenario.id) return s;
+      const nextPosition = position + direction;
+      if (nextPosition < 0 || nextPosition >= s.priorityOrder.length) return s;
+      const priorityOrder = [...s.priorityOrder] as PriorityOrder;
+      [priorityOrder[position], priorityOrder[nextPosition]] = [priorityOrder[nextPosition], priorityOrder[position]];
+      return { ...s, priorityOrder };
+    }));
   const updateDevelopments = (next:Development[])=>setScenarios(list=>list.map(item=>item.id===scenario.id?{...item,developments:[...(item.developments || []).filter(development=>development.municipalityId!==spatialMunicipality.id),...next]}:item));
   const inform = (message: string) => {
     setNotice(message);
     window.setTimeout(() => setNotice(""), 4000);
   };
   const reset = () => {
+    const original = scenario.id === "drought" ? droughtScenario : baseline(scenario.id, scenario.name);
+    const hasChanges = JSON.stringify(scenario.inputs) !== JSON.stringify(original.inputs) || JSON.stringify(scenario.priorityOrder) !== JSON.stringify(original.priorityOrder) || JSON.stringify(scenario.developments || []) !== JSON.stringify(original.developments || []);
+    if (hasChanges && !window.confirm("Reset this scenario to its demonstration baseline? Your current changes will be cleared.")) return;
     setScenarios((list) =>
-      list.map((s) => (s.id === scenario.id ? baseline(s.id, s.name) : s)),
+      list.map((s) => (s.id === scenario.id ? structuredClone(original) : s)),
     );
     inform("Current scenario reset to demonstration baseline.");
   };
@@ -405,16 +408,11 @@ export default function App() {
     setScenarios(list);
     setScenarioId(s.id);
     try {
-      localStorage.setItem(
-        "water-economics-scenarios-v1",
-        JSON.stringify(
-          list.filter((x) => !["baseline", "drought"].includes(x.id)),
-        ),
-      );
+      persistSavedScenarios(list, localStorage);
       inform("Scenario saved on this device.");
     } catch {
       inform(
-        "Scenario created for this session. Device storage is unavailable.",
+        "Scenario created for this session. Device save failed; existing saved scenarios were left unchanged.",
       );
     }
     setModal(false);
@@ -424,14 +422,16 @@ export default function App() {
       [
         "Municipality",
         "Supply ML/day",
-        "Demand ML/day",
+        "Estimated baseline demand ML/day",
         "Development demand ML/day",
-        "Allocation ML/day",
+        "Water allocated ML/day",
+        "Requested allocation ML/day",
         "Allocable water ML/day",
         "NRW % (demo assumption)",
         "Protected reserve % (demo assumption)",
         "Closing storage ML",
-        "Unmet demand ML/day",
+        "Unmet estimated demand ML/day",
+        "Allocation above estimate ML/day",
         "Household coverage %",
         "Affordability burden %",
       ],
@@ -441,11 +441,13 @@ export default function App() {
         r.demand,
         r.developmentDemand,
         r.allocation,
+        r.allocationRequests.reduce((total, value) => total + value, 0),
         r.allocable,
         r.nrw * 100,
         r.reserve * 100,
         r.ending,
         r.shortage,
+        r.excess,
         r.coverage[0] * 100,
         r.burden,
       ]),
@@ -480,19 +482,15 @@ export default function App() {
             setPage("Simulation");
           }}
         >
-          <span className="brand-icon">
-            <Droplets size={25} />
-          </span>
-          <span>
-            DALOY
-            <small>Samar Water Decision System</small>
-          </span>
+          <span className="brand-icon"><img src={daloyIcon} alt="" aria-hidden="true" /></span>
+          <span className="brand-wordmark">DALOY</span>
         </a>
         <div className="header-end">
           <a className="button secondary" href="./gis.html" aria-label="Open GIS map and shared barangay data">
             <MapPin size={15} />
             <span>GIS &amp; data</span>
           </a>
+          <button className="icon-button" aria-label="View methodology and help" onClick={() => setPage("Methodology")}><BookOpen size={18} /></button>
           <button
             className="appearance-toggle"
             type="button"
@@ -504,16 +502,46 @@ export default function App() {
             {appearance === "day" ? <Moon size={16}/> : <Sun size={16}/>}
             <span>{appearance === "day" ? "Night" : "Day"}</span>
           </button>
-          <button
-            className="icon-button"
-            aria-label="View methodology and help"
-            onClick={() => setPage("Methodology")}
+          <div
+            className="settings-anchor"
+            onKeyDown={(event) => { if (event.key === "Escape") setSettingsOpen(false); }}
+            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSettingsOpen(false); }}
           >
-            <CircleHelp size={19} />
-          </button>
-          <span className="avatar" title="Local planning workspace">
-            LG
-          </span>
+            <button
+              className="settings-toggle"
+              type="button"
+              aria-label="Settings"
+              aria-expanded={settingsOpen}
+              aria-controls="display-settings"
+              onClick={() => setSettingsOpen((open) => !open)}
+            >
+              <SettingsIcon size={18} />
+              <span>Settings</span>
+            </button>
+            {settingsOpen && <section className="settings-popover" id="display-settings" role="dialog" aria-label="Display settings">
+              <header className="settings-popover-head">
+                <div><h2>Settings</h2><p>Adjust how text appears on this device.</p></div>
+                <button className="settings-close" type="button" aria-label="Close settings" onClick={() => setSettingsOpen(false)}><X size={17} /></button>
+              </header>
+              <fieldset className="text-size-fieldset">
+                <legend>Text size</legend>
+                <div className="text-size-options" role="group" aria-label="Choose text size">
+                  {textSizeOptions.map((option) => <button
+                    key={option.value}
+                    className={`text-size-option${textSize === option.value ? " selected" : ""}`}
+                    type="button"
+                    aria-pressed={textSize === option.value}
+                    onClick={() => setTextSize(option.value)}
+                  >
+                    <span className="text-size-sample" style={{ fontSize: option.sample }}>A</span>
+                    <span>{option.label}</span>
+                  </button>)}
+                </div>
+              </fieldset>
+              <p className="settings-preview"><strong>Preview</strong><span>Water demand updates as you change assumptions.</span></p>
+              <small className="settings-saved-note">Your choice is saved on this device.</small>
+            </section>}
+          </div>
         </div>
       </header>
       <main className={page === "Simulation" ? "simulation-main" : ""}>
@@ -542,6 +570,8 @@ export default function App() {
             </p>
           </div>
           {page !== "Simulation" && <div className="heading-actions">
+            <button className="button secondary" onClick={() => setPage("Data")}><Database size={15} />Municipal inputs</button>
+            {page !== "Data" && <button className="button secondary" onClick={exportData}><Download size={15} />Export results</button>}
             <button className="button secondary" onClick={reset}>
               <RotateCcw size={15} />
               Reset
@@ -559,14 +589,14 @@ export default function App() {
                 <button
                   key={m.id}
                   className={scope === m.id ? "selected" : ""}
-                  onClick={() => { setScope(m.id); setReservoirDetailsOpen(false); }}
+                  onClick={() => setScope(m.id)}
                 >
                   {m.id === "combined" && <Layers3 size={15} />} {m.name}
                 </button>
               ))}
             </div>
             {page === "Simulation" && <div className="simulation-view-tabs" role="tablist" aria-label="Simulation view">
-              {["Reservoir", "Water flows"].map((item) => <button key={item} role="tab" aria-selected={view === item} className={view === item ? "active" : ""} onClick={() => { setView(item); setReservoirDetailsOpen(false); }}>
+              {["Reservoir", "Water flows"].map((item) => <button key={item} role="tab" aria-selected={view === item} className={view === item ? "active" : ""} onClick={() => setView(item)}>
                 {item === "Water flows" ? <GitBranch size={14}/> : <Layers3 size={14}/>}
                 {item}
               </button>)}
@@ -589,6 +619,8 @@ export default function App() {
               </select>
             </div>
             {page === "Simulation" && <div className="context-actions">
+              <button className="context-reset" onClick={() => { setCompareMode("Scenarios"); setPage("Scenarios"); }} aria-label="Compare scenarios" title="Compare scenarios"><GitBranch size={15}/></button>
+              <button className="context-reset" onClick={exportData} aria-label="Export results" title="Export results"><Download size={15}/></button>
               <button className="context-reset" onClick={reset} aria-label="Reset simulation" title="Reset simulation"><RotateCcw size={15}/></button>
               <button className="context-save" onClick={openSave}><Save size={15}/>Save</button>
             </div>}
@@ -609,7 +641,7 @@ export default function App() {
                   </button>
                 </div>
                 <div className="control-tabs">
-                  {[["Sources", "Sources"], ["Allocation", "Demand"], ["Equity", "Policies"]].map(([t, label]) => (
+                  {[["Sources", "Sources"], ["Allocation", "Allocation"], ["Equity", "Equity"]].map(([t, label]) => (
                     <button
                       key={t}
                       className={controlTab === t ? "selected" : ""}
@@ -742,48 +774,58 @@ export default function App() {
                       <div className="control-section">
                         <div className="mini-heading">
                           <Home size={16} />
-                          <h3>Water allocation simulator</h3>
+                          <h3>Water allocation plan</h3>
                         </div>
-                        <Slider
-                          label="Demand multiplier"
-                          value={p.demand}
-                          min={50}
-                          max={150}
-                          onChange={(v) => update({ demand: v })}
-                        />
-                        <Slider
-                          label="Allocation target"
-                          value={p.allocation}
-                          onChange={(v) => update({ allocation: v })}
-                        />
                         <p className="help-text">
-                          Allocation is a percentage of demand, capped by
-                          available water.
+                          Set an allocation request for each sector. All sectors share the municipality’s available water pool; requests are served in the priority order below. Total water allocated cannot exceed the water currently available after losses and the protected reserve.
                         </p>
                       </div>
+                      <div className="control-section priority-section">
+                        <div className="mini-heading"><ShieldCheck size={16}/><h3>Scarcity priority · this scenario</h3></div>
+                        <p className="help-text">When total requests exceed available water, higher rows are served first. This order is saved with the scenario.</p>
+                        <ol className="priority-list" aria-label="Scenario allocation priority order">
+                          {scenario.priorityOrder.map((sectorIndex, position) => (
+                            <li key={sectorIndex}>
+                              <span className="priority-rank">{position + 1}</span>
+                              <span className="priority-sector">{sectorNames[sectorIndex]}</span>
+                              <button type="button" aria-label={`Move ${sectorNames[sectorIndex]} higher`} disabled={position === 0} onClick={() => movePriority(position, -1)}><ChevronUp size={15}/></button>
+                              <button type="button" aria-label={`Move ${sectorNames[sectorIndex]} lower`} disabled={position === 3} onClick={() => movePriority(position, 1)}><ChevronDown size={15}/></button>
+                            </li>
+                          ))}
+                        </ol>
+                        {p.protect && <p className="priority-policy-note">Essential-needs protection runs first, then the order above applies to remaining requests.</p>}
+                      </div>
                       {sectorNames.map((name, i) => (
-                        <div className="control-section compact" key={name}>
+                        <div className="control-section compact sector-volume-controls" key={name}>
                           <div className="mini-heading">
-                            <i
-                              className="dot"
-                              style={{ background: sectorColors[i] }}
-                            />
+                            <i className="dot" style={{ background: sectorColors[i] }} />
                             <h3>{name}</h3>
-                            <span>{number(result.demands[i])} ML/d</span>
+                            <span>Estimated demand {number(result.demands[i])} ML/day</span>
                           </div>
                           <Slider
-                            label={`${name} channel`}
-                            value={p.allocationShares[i]}
-                            unit="%"
-                            onChange={(v) => setAllocationShare(i, v)}
+                            label="Allocation request"
+                            value={allocationRequestInputs[i]}
+                            max={result.allocable}
+                            step={0.5}
+                            unit=" ML/day"
+                            onChange={(v) => setSectorAllocation(i, v)}
                           />
+                          <p className="sector-volume-outcome">
+                            Allocated {number(result.allocations[i])} ML/day
+                            {result.unmetBySector[i] > .05 ? ` · ${number(result.unmetBySector[i])} demand unmet` : " · estimated demand met"}
+                            {result.excessAllocations[i] > .05 ? ` · ${number(result.excessAllocations[i])} above estimate` : ""}
+                          </p>
                         </div>
                       ))}
                       <div className="control-section allocation-outcome">
-                        <div className="mini-heading"><BarChart3 size={16} /><h3>Live allocation outcome</h3></div>
-                        <p>{mixed("allocationShares") ? "Channel settings vary by LGU." : "Increasing one channel automatically rebalances the other three. Water unused by a fully met channel flows to channels still needing water."}</p>
-                        <div><span>Channel plan</span><strong>{number(allocationShareTotal)} <small>%</small></strong></div>
-                        <div><span>Available for distribution</span><strong>{number(result.allocable)} <small>ML/day</small></strong></div>
+                        <div className="mini-heading"><BarChart3 size={16} /><h3>Allocation outcome</h3></div>
+                        <p>Every sector draws from the same municipal water pool. Priority controls who is served first when requests exceed what is available; unallocated water remains in storage.</p>
+                        <div><span>Total requested</span><strong>{number(sum(result.allocationRequests))} <small>ML/day</small></strong></div>
+                        <div><span>Water allocated</span><strong>{number(result.allocation)} <small>ML/day</small></strong></div>
+                        <div><span>Available water</span><strong>{number(result.allocable)} <small>ML/day</small></strong></div>
+                        <div><span>Storage used today</span><strong>{number(Math.max(0, result.results.reduce((total, item) => total + item.allocation / (1 - item.nrw) - item.supply, 0)))} <small>ML</small></strong></div>
+                        <div><span>Estimated demand unmet</span><strong>{number(result.shortage)} <small>ML/day</small></strong></div>
+                        {result.excess > .05 && <div><span>Allocation above estimate</span><strong>{number(result.excess)} <small>ML/day</small></strong></div>}
                       </div>
                     </>
                   )}
@@ -796,7 +838,7 @@ export default function App() {
                         </div>
                         <Toggle
                           label="Protect essential needs"
-                          description="Reserve 80% of household demand and all critical-service demand, as water permits."
+                          description="Reserve 80% of estimated household demand and all critical-service demand, as water permits."
                           value={p.protect}
                           onChange={() => update({ protect: !p.protect })}
                         />
@@ -836,13 +878,20 @@ export default function App() {
                   <span>Illustrative inputs. Changes update instantly.</span>
                 </div>
               </aside>
-              <section className="simulation-panel">
+              <section className={`simulation-panel${overviewVisible ? "" : " summary-hidden"}`}>
                 <div className="model-heading">
                   <div>
                     <span className="status-dot" />{" "}
                     <h2>{scopeName} water system</h2>
                     <span className="subtle-badge">1-day simulation</span>
+                    {scope === "combined" && <span className="representative-label">{spatialMunicipality.name} model</span>}
                   </div>
+                </div>
+                <div className="decision-metrics" aria-label="Current scenario water balance">
+                  <div><span>Source supply</span><strong>{number(result.supply)} <small>ML/day</small></strong></div>
+                  <div><span>Estimated demand</span><strong>{number(result.demand)} <small>ML/day</small></strong></div>
+                  <div className={result.gap > 0 ? "warning" : ""}><span>Supply gap</span><strong>{result.gap > 0 ? "−" : ""}{number(result.gap)} <small>ML/day</small></strong></div>
+                  <div><span>Closing storage</span><strong>{number(result.ending)} <small>/ {number(result.capacity)} ML</small></strong><em>{number(protectedReserveVolume)} ML protected · {number(Math.max(0, result.ending - protectedReserveVolume))} ML usable</em></div>
                 </div>
                 <div className="model-stage">
                   {view === "Reservoir" ? (
@@ -861,40 +910,18 @@ export default function App() {
                           paused={false}
                           reset={0}
                           showDetails={reservoirDetailsOpen}
+                          showOverview={overviewVisible}
                           onToggleDetails={handleDamDetailsToggle}
                         />
                       </Suspense>
                       {reservoirDetailsOpen && <>
-                        <div className="metrics-ribbon details-pop">
-                          <div>
-                            <span><ArrowDownRight size={13} /> Source inflow</span>
-                            <strong>{number(result.supply)}<small>ML/day</small></strong>
-                            <em>{percentChange(result.supply, baselineResult.supply)}</em>
-                          </div>
-                          <div>
-                            <span><ArrowUpRight size={13} /> Water demand</span>
-                            <strong>{number(result.demand)}<small>ML/day</small></strong>
-                            <em>{percentChange(result.demand, baselineResult.demand)}</em>
-                          </div>
-                          <div className="amber">
-                            <span><Activity size={13} /> Inflow deficit</span>
-                            <strong>{number(result.gap)}<small>ML/day</small></strong>
-                            <em>{result.demand > 0 ? `${number(result.gap / result.demand * 100)}% of demand` : "No demand"}</em>
-                          </div>
-                          <div className="storage-metric">
-                            <span><Droplets size={13} /> Closing storage</span>
-                            <strong>{number(result.ending)}<small> / {number(result.capacity)} ML</small></strong>
-                            <i><b style={{ width: `${Math.max(0, Math.min(100, (result.ending / result.capacity) * 100))}%` }} /></i>
-                            <em>{Math.round((result.ending / result.capacity) * 100)}% full · {number(Math.max(0, result.ending - protectedReserveVolume))} ML above reserve</em>
-                          </div>
-                        </div>
                         <div className={`balance-message details-pop ${result.shortage > 0 ? "warning" : ""}`}>
                           <Info size={16} />
                           <p>
                             {result.shortage > 0 ? (
-                              <><strong>{number(result.shortage)} ML/day of demand is unmet.</strong>{" "}{currentSectorShortfalls[0]?.unmet > .05 ? `${currentSectorShortfalls[0].name} has the largest shortfall at ${number(currentSectorShortfalls[0].unmet)} ML/day.` : "Try increasing supply or revisiting the distribution channels."}</>
+                              <><strong>{number(result.shortage)} ML/day of demand is unmet.</strong>{" "}{currentSectorShortfalls[0]?.unmet > .05 ? `${currentSectorShortfalls[0].name} has the largest shortfall at ${number(currentSectorShortfalls[0].unmet)} ML/day.` : "You can review source assumptions and the allocation priority."}</>
                             ) : result.gap > 0 ? (
-                              <><strong>Stored water bridges the {number(result.gap)} ML/day inflow deficit.</strong>{" "}{availableStorageBuffer > .05 ? `Water above the protected reserve lasts about ${number(storageCoverDays)} days at this rate.` : "Storage is at its protected reserve."}</>
+                              <><strong>Stored water bridges the {number(result.gap)} ML/day inflow deficit.</strong>{" "}{number(Math.max(0, result.ending - protectedReserveVolume))} ML remains above the protected reserve after this day.</>
                             ) : (
                               <><strong>Source inflow covers current demand.</strong>{" "}The remaining water can replenish reservoir storage.</>
                             )}
@@ -927,18 +954,19 @@ export default function App() {
                 </div>
                 <div className="inspector-body">
                   <div className="inspector-subheading">
-                    <span>Sector demand met</span>
-                    <small>Allocated / demand</small>
+                    <span>Water allocated</span>
+                    <small>Allocated / estimated demand</small>
                   </div>
                   <div className="sector-list">
                     {sectorNames.map((name, i) => {
-                      const Icon = [Home, Leaf, Factory, Landmark][i];
-                      const unmet = Math.max(0, result.demands[i] - result.allocations[i]);
+                      const unmet = result.unmetBySector[i];
+                      const excess = result.excessAllocations[i];
+                      const status = unmet > .05 ? "unmet" : excess > .05 ? "excess" : "met";
                       return (
                         <button
                           key={name}
-                          className={`sector-row ${sector === i && sectorDetailOpen ? "active" : ""} ${unmet > .05 ? "has-unmet" : "fully-met"}`}
-                          aria-label={`${name}: ${number(result.allocations[i])} of ${number(result.demands[i])} ML/day supplied${unmet > .05 ? `, ${number(unmet)} ML/day unmet` : ", fully met"}`}
+                          className={`sector-row ${status} ${sector === i && sectorDetailOpen ? "active" : ""}`}
+                          aria-label={`${name}: ${number(result.allocations[i])} ML/day allocated against estimated demand of ${number(result.demands[i])} ML/day; request ${number(result.allocationRequests[i])} ML/day${unmet > .05 ? `, ${number(unmet)} ML/day demand unmet` : excess > .05 ? `, ${number(excess)} ML/day allocated above estimate` : ", estimated demand met"}`}
                           aria-expanded={sector === i && sectorDetailOpen}
                           onClick={() => {
                             if (sector === i) setSectorDetailOpen((open) => !open);
@@ -950,23 +978,18 @@ export default function App() {
                         >
                           <div>
                             <span>
-                              <Icon
-                                size={15}
-                                style={{ color: sectorColors[i] }}
-                              />
                               {name}
                             </span>
-                            <strong>{unmet > .05 ? `${number(unmet)} ML/day unmet` : "Fully met"}</strong>
+                            <strong>{unmet > .05 ? `${number(unmet)} ML/day demand unmet` : excess > .05 ? `+${number(excess)} ML/day above estimate` : "Estimated demand met"}</strong>
                           </div>
                           <div className="coverage-track">
                             <i
                               style={{
                                 width: `${result.coverage[i] * 100}%`,
-                                background: sectorColors[i],
                               }}
                             />
                           </div>
-                          <small>{number(result.allocations[i])} / {number(result.demands[i])} ML/day · {Math.round(result.coverage[i] * 100)}% supplied</small>
+                          <small>{number(result.allocations[i])} allocated / {number(result.demands[i])} ML/day estimated demand · {Math.round(result.coverage[i] * 100)}% covered</small>
                         </button>
                       );
                     })}
@@ -974,17 +997,7 @@ export default function App() {
                   {sectorDetailOpen && <div className="sector-detail">
                     <strong>{sectorNames[sector]} allocation</strong>
                     <p>
-                      {number(
-                        result.demands[sector] - result.allocations[sector],
-                      )}{" "}
-                      ML/day unmet. Channel{" "}
-                      {mixed("allocationShares")
-                        ? "varies by LGU"
-                        : `${p.allocationShares[sector]}%`}
-                      ;{" "}
-                      {p.protect
-                        ? "essential-needs protection enabled."
-                        : "unused channel water is redistributed to sectors still needing water."}
+                      Estimated baseline demand is {number(result.demands[sector])} ML/day; request is {number(result.allocationRequests[sector])} ML/day; water allocated is {number(result.allocations[sector])} ML/day. {result.unmetBySector[sector] > .05 ? `${number(result.unmetBySector[sector])} ML/day of estimated demand remains unmet.` : result.excessAllocations[sector] > .05 ? `${number(result.excessAllocations[sector])} ML/day is allocated above the estimate.` : "Estimated demand is met."} Priority {scenario.priorityOrder.indexOf(sector as SectorIndex) + 1} for this scenario.{p.protect ? " Essential-needs protection is enabled." : ""}
                     </p>
                   </div>}
                   <section className="impact-summary" aria-label="People behind the numbers">
@@ -994,7 +1007,7 @@ export default function App() {
                       <div><strong>{number(result.burden)}%</strong><span>Water burden</span></div>
                       <div><strong>{number(result.assisted)}</strong><span>Households assisted</span></div>
                     </div>
-                    <p>*Equivalent household estimate from unmet household demand; not identified households.</p>
+                    <p>*Equivalent household estimate from the household allocation shortfall; not identified households.</p>
                     <div className="impact-agriculture"><span>Agriculture &amp; fisheries unmet</span><strong>{number(Math.max(0, result.demands[1] - result.allocations[1]))} ML/day</strong></div>
                     <button className="text-button" onClick={() => setPage("Methodology")}>
                       How are these calculated?<ArrowUpRight size={13}/>
@@ -1031,7 +1044,7 @@ export default function App() {
                   </span>
                   <span>
                     <i />
-                    Demand
+                    Water allocated
                   </span>
                 </div>
                 {simulate(scenario).results.map((r) => (
@@ -1043,7 +1056,7 @@ export default function App() {
                     <div>
                       <span>{r.name}</span>
                       <small>
-                        {number(r.supply)} / {number(r.demand)} ML/d
+                        {number(r.supply)} / {number(r.demand)} ML/day demand
                       </small>
                     </div>
                     <div>
@@ -1081,8 +1094,8 @@ export default function App() {
           <section id="spatial-section" className="spatial-section" aria-label="Samar spatial context">
             <div className="explore-status-strip" aria-label={`${spatialMunicipality.name} live planning summary`}>
               <div className="explore-focus"><span>Spatial focus</span><strong>{spatialMunicipality.name}</strong><small>{scope === "combined" ? "REPRESENTATIVE PILOT" : "SELECTED PILOT"}</small></div>
-              <div><span>Demand covered</span><strong>{Math.round(spatialCoverage * 100)}%</strong><small>SIMULATED</small></div>
-              <div><span>Daily shortfall</span><strong>{number(spatialResult.shortage)} <small>ML/day</small></strong><small>SIMULATED</small></div>
+              <div><span>Estimated demand covered</span><strong>{Math.round(spatialCoverage * 100)}%</strong><small>SIMULATED</small></div>
+              <div><span>Unmet estimated demand</span><strong>{number(spatialResult.shortage)} <small>ML/day</small></strong><small>SIMULATED</small></div>
               <div><span>Household water burden</span><strong>{number(spatialResult.burden)}%</strong><small>SIMULATED</small></div>
               <div className="explore-mode-control">
                 <span>{exploreLayout === "split" ? "SPLIT EXPLORE" : exploreLayout === "map-expanded" ? "MAP VIEW" : "PLANNING VIEW"}</span>
@@ -1116,16 +1129,16 @@ export default function App() {
                     <button className="planner-launch" type="button" onClick={()=>{setPlannerSelectedId(null);setPlannerOpen(true);}}><Building2 size={15}/> Development planner{spatialDevelopments.length>0?<span>{spatialDevelopments.length}</span>:null}</button>
                     <div className="tariff-control-wrap">
                       <button className="tariff-launch" type="button" aria-expanded={tariffPanelOpen} aria-controls="main-tariff-control" onClick={() => setTariffPanelOpen(open => !open)}>
-                        <WalletCards size={15}/><span>Tariff</span><strong>₱{number(spatialInput.price)}/m³</strong>
+                        <WalletCards size={15}/><span>Water value</span><strong>₱{number(spatialInput.price)}/m³</strong>
                       </button>
                       {tariffPanelOpen && <div className="tariff-popover" id="main-tariff-control">
-                        <div className="tariff-popover-head"><div><strong>Water tariff</strong><small>Illustrative scenario assumption</small></div><button type="button" aria-label="Close tariff settings" onClick={() => setTariffPanelOpen(false)}><X size={15}/></button></div>
+                        <div className="tariff-popover-head"><div><strong>Water value</strong><small>Illustrative scenario assumption</small></div><button type="button" aria-label="Close water value settings" onClick={() => setTariffPanelOpen(false)}><X size={15}/></button></div>
                         <label className="tariff-price-field">
-                          <span>Tariff for {spatialMunicipality.name}</span>
-                          <div><input aria-label={`Tariff price for ${spatialMunicipality.name}`} type="number" min="0" max="100" step="0.01" value={tariffDraft?.id===spatialMunicipality.id?tariffDraft.value:spatialInput.price} onChange={event=>{const raw=event.currentTarget.value;setTariffDraft({id:spatialMunicipality.id,value:raw});const value=Number(raw);if(raw!==""&&Number.isFinite(value)&&value>=0&&value<=100)updateMunicipal(spatialMunicipality.id,{price:value});}} onBlur={()=>{if(tariffDraft?.id===spatialMunicipality.id){const parsed=Number(tariffDraft.value);if(tariffDraft.value!==""&&Number.isFinite(parsed))updateMunicipal(spatialMunicipality.id,{price:Math.max(0,Math.min(100,parsed))});setTariffDraft(null);}}}/><span>₱/m³</span></div>
+                          <span>Water value for {spatialMunicipality.name}</span>
+                          <div><input aria-label={`Water value for ${spatialMunicipality.name}`} type="number" min="0" max="100" step="0.01" value={tariffDraft?.id===spatialMunicipality.id?tariffDraft.value:spatialInput.price} onChange={event=>{const raw=event.currentTarget.value;setTariffDraft({id:spatialMunicipality.id,value:raw});const value=Number(raw);if(raw!==""&&Number.isFinite(value)&&value>=0&&value<=100)updateMunicipal(spatialMunicipality.id,{price:value});}} onBlur={()=>{if(tariffDraft?.id===spatialMunicipality.id){const parsed=Number(tariffDraft.value);if(tariffDraft.value!==""&&Number.isFinite(parsed))updateMunicipal(spatialMunicipality.id,{price:Math.max(0,Math.min(100,parsed))});setTariffDraft(null);}}}/><span>₱/m³</span></div>
                           <small>Enter a price from ₱0 to ₱100 per m³.</small>
                         </label>
-                        <section className={`tariff-model-legend tariff-pressure-${affordability.toLowerCase()}`} aria-label="Tariff impact on model buildings">
+                        <section className={`tariff-model-legend tariff-pressure-${affordability.toLowerCase()}`} aria-label="Water value impact on model buildings">
                           <div className="tariff-affordability-head"><span>Affordability by establishment</span><strong>{affordability} household burden: {number(spatialResult.burden)}%</strong></div>
                           <div className="tariff-impact-list">
                             {tariffImpact.map(item=><div className="tariff-impact-row" key={item.key}>
@@ -1164,9 +1177,21 @@ export default function App() {
                 </div>
 
                 <div className="demand-drawer">
-                  <div className="demand-drawer-head"><div><h3>Water allocation · {spatialMunicipality.name}</h3><p>{exploreLayout === "split" ? "Expand the planning view for sector-level coverage." : "Hover a sector to highlight its buildings · values are illustrative."}</p></div><span className="demand-total">{number(spatialResult.allocation)} ML/day delivered{spatialStorageUsed > .05 ? ` · ${number(spatialStorageUsed)} from storage` : ""}</span></div>
+                <div className="demand-drawer-head"><div><h3>Water allocated · {spatialMunicipality.name}</h3><p>{exploreLayout === "split" ? "Expand the planning view for sector allocations." : "Hover a sector to highlight its buildings · values are illustrative."}</p></div><span className="demand-total">{number(spatialResult.allocation)} ML/day allocated{spatialStorageUsed > .05 ? ` · ${number(spatialStorageUsed)} from storage` : ""}</span></div>
                   <div className="demand-cards">
-                    {spatialDemands.map(item => { const Icon = item.icon; const expanded = expandedSpatialSector === item.name; const status = item.coverage >= .999 ? "Met" : item.coverage >= .5 ? "Partly met" : "At risk"; return <button key={item.name} type="button" className={`sector-card ${expanded ? "expanded" : ""}`} aria-expanded={expanded} aria-label={`${item.name}: ${number(item.allocation)} of ${number(item.value)} ML per day allocated, ${Math.round(item.coverage * 100)} percent covered`} style={{"--sector": item.color, "--status": coverageColor(item.coverage, item.color)} as React.CSSProperties} onMouseEnter={() => setHoverSpatialSector(item.name)} onMouseLeave={() => setHoverSpatialSector(null)} onFocus={() => setHoverSpatialSector(item.name)} onBlur={() => setHoverSpatialSector(null)} onClick={() => setExpandedSpatialSector(expanded ? null : item.name)}><div><span><Icon size={16}/></span><b>{item.name}</b></div><strong>{number(item.allocation)} <small>of {number(item.value)} ML/day</small></strong><p>{Math.round(item.coverage * 100)}% covered · {status}</p><div><i style={{width: `${Math.max(0, Math.min(100, item.coverage * 100))}%`}}/></div></button>; })}
+                    {spatialDemands.map((item) => {
+                      const Icon = item.icon;
+                      const expanded = expandedSpatialSector === item.name;
+                      const status = item.unmet > .05
+                        ? item.coverage >= .5 ? "Partly covered" : "At risk"
+                        : item.excess > .05 ? `${number(item.excess)} ML/day above estimate` : "Covered";
+                      return <button key={item.name} type="button" className={`sector-card ${expanded ? "expanded" : ""}`} aria-expanded={expanded} aria-label={`${item.name}: ${number(item.allocation)} ML/day allocated against estimated demand of ${number(item.value)} ML/day; ${number(item.unmet)} ML/day unmet`} style={{"--sector": item.color, "--status": coverageColor(item.coverage, item.color)} as React.CSSProperties} onMouseEnter={() => setHoverSpatialSector(item.name)} onMouseLeave={() => setHoverSpatialSector(null)} onFocus={() => setHoverSpatialSector(item.name)} onBlur={() => setHoverSpatialSector(null)} onClick={() => setExpandedSpatialSector(expanded ? null : item.name)}>
+                        <div><span><Icon size={16}/></span><b>{item.name}</b></div>
+                        <strong>{number(item.allocation)} <small>allocated · {number(item.value)} estimated ML/day</small></strong>
+                        <p>{Math.round(item.coverage * 100)}% of estimated demand covered · {status}</p>
+                        <div><i style={{width: `${Math.max(0, Math.min(100, item.coverage * 100))}%`}}/></div>
+                      </button>;
+                    })}
                   </div>
                   {expandedSpatialDemand && <section className="sector-detail" style={{"--sector": expandedSpatialDemand.color} as React.CSSProperties} aria-label={`${expandedSpatialDemand.name} planning detail`}>
                     <div className="sector-detail-copy"><span>{expandedSpatialDemand.name}</span><p>{spatialSectorDetails[expandedSpatialDemand.name].summary}</p></div>
@@ -1190,19 +1215,19 @@ export default function App() {
                   <div className="facility-inventory-head"><h4>Sector inventory</h4><span>Counts with provenance</span></div>
                   <dl>{facilityInventory.map(([label,value,source]) => <div key={label}><dt>{label}</dt><dd>{value}</dd><small>{source}</small></div>)}</dl>
                 </section>
-                <div className="profile-economic-note"><span>Household affordability</span><strong>{number(spatialResult.burden)}% of income</strong><small>SIMULATED · {money(spatialInput.price)}/m³ tariff</small></div>
+                <div className="profile-economic-note"><span>Household affordability</span><strong>{number(spatialResult.burden)}% of income</strong><small>SIMULATED · {money(spatialInput.price)}/m³ water value</small></div>
                 <p className="profile-note">Facility counts and pressure are unconfigured. They are shown as data needed rather than estimated.</p>
               </aside>}
 
               {exploreLayout === "planning-expanded" && <aside className="explore-detail-rail allocation-context">
-                <header><span>DEMAND &amp; SERVICE</span><h3>Water allocation</h3><p>{number(spatialResult.allocation)} ML/day delivered</p></header>
+                <header><span>WATER ALLOCATION</span><h3>Water allocated</h3><p>{number(spatialResult.allocation)} ML/day delivered</p></header>
                 <div className="allocation-context-list">{spatialDemands.map((item) => {
                   const Icon = item.icon;
                   const active = expandedSpatialSector === item.name;
-                  const status = item.coverage >= .999 ? "Met" : item.coverage >= .5 ? "Partly met" : "At risk";
+                  const status = item.unmet > .05 ? item.coverage >= .5 ? "Partly covered" : "At risk" : item.excess > .05 ? `+${number(item.excess)} above estimate` : "Covered";
                   return <button key={item.name} className={`context-sector-row ${active ? "selected" : ""}`} style={{"--sector": item.color, "--status": coverageColor(item.coverage, item.color)} as React.CSSProperties} aria-pressed={active} onMouseEnter={() => setHoverSpatialSector(item.name)} onMouseLeave={() => setHoverSpatialSector(null)} onFocus={() => setHoverSpatialSector(item.name)} onBlur={() => setHoverSpatialSector(null)} onClick={() => setExpandedSpatialSector(active ? null : item.name)}>
-                    <span className="context-sector-title"><i><Icon size={15}/></i><b>{item.name}</b><strong>{Math.round(item.coverage * 100)}%</strong></span>
-                    <span className="context-sector-volume">{number(item.allocation)} of {number(item.value)} ML/day · {status}</span>
+                    <span className="context-sector-title"><i><Icon size={20}/></i><b>{item.name}</b><strong>{Math.round(item.coverage * 100)}%</strong></span>
+                    <span className="context-sector-volume">{number(item.allocation)} allocated · {number(item.value)} estimated demand · {status}</span>
                     <span className="context-sector-track"><i style={{width: `${Math.max(0, Math.min(100, item.coverage * 100))}%`}}/></span>
                   </button>;
                 })}</div>
@@ -1231,24 +1256,24 @@ export default function App() {
                   <div><strong>{nrwPercentagePointChange >= 0 ? "−" : "+"}{number(Math.abs(nrwPercentagePointChange))} pp</strong><span>NRW change from demo baseline</span></div>
                   <div><strong>{spatialInput.price > 0 ? `₱${number(nrwValueEstimate)}/day` : "Not estimated"}</strong><span>Potential value of added deliveries · ESTIMATED</span></div>
                 </div>
-                <p className="nrw-method-note">Source loss uses simulated inflow plus opening storage × NRW. Allocable water uses the live reservoir, protected reserve, and loss model. Potential value uses only the additional simulated allocation at the current illustrative tariff of {money(spatialInput.price)}/m³; it is not a revenue forecast.</p>
+                <p className="nrw-method-note">Source loss uses simulated inflow plus opening storage × NRW. Allocable water uses the live reservoir, protected reserve, and loss model. Potential value uses only the additional simulated allocation at the current illustrative water value of {money(spatialInput.price)}/m³; it is not a revenue forecast.</p>
               </div>}
             </section>}
             {exploreLayout === "map-expanded" && <section className={`water-balance-panel ${waterBalanceOpen ? "expanded" : ""}`} aria-labelledby="water-balance-title">
               <button className="water-balance-toggle" type="button" aria-expanded={waterBalanceOpen} onClick={() => setWaterBalanceOpen((open) => !open)}>
                 <span><small>LIVE MUNICIPALITY MODEL</small><strong id="water-balance-title">Water balance analysis</strong></span>
                 <span className="water-balance-summary">
-                  <span>Required <b>{number(spatialResult.demand)} ML/day</b></span>
-                  <span>Unmet <b>{number(spatialResult.shortage)} ML/day</b></span>
+                  <span>Estimated demand <b>{number(spatialResult.demand)} ML/day</b></span>
+                  <span>Demand unmet <b>{number(spatialResult.shortage)} ML/day</b></span>
                   <span>Allocable <b>{number(spatialResult.allocable)} ML/day</b></span>
                 </span>
                 <span className="analysis-expand">{waterBalanceOpen ? "Hide analysis" : "View analysis"}<ChevronRight size={16}/></span>
               </button>
               {waterBalanceOpen && <div className="water-balance-charts">
                 <section className="wedge-stack-chart">
-                  <header><h3>Demand allocation by sector</h3><p>Wedge length shows required volume; each wedge stacks delivered and unmet water · ML/day</p></header>
+                  <header><h3>Allocation by sector</h3><p>Compare estimated baseline demand with water allocated; any unmet estimate is shown · ML/day</p></header>
                   <div className="wedge-chart-layout">
-                    <svg viewBox="0 0 380 270" role="img" aria-label={`Radial stacked chart: ${spatialDemands.map((item) => `${item.name}, ${number(item.allocation)} allocated of ${number(item.value)} ML per day required`).join("; ")}`}>
+                    <svg viewBox="0 0 380 270" role="img" aria-label={`Radial chart of water allocation against estimated baseline demand: ${spatialDemands.map((item) => `${item.name}, ${number(item.allocation)} ML/day allocated of ${number(item.value)} ML/day estimated demand`).join("; ")}`}>
                       <circle cx="190" cy="128" r="104" className="wedge-guide"/><circle cx="190" cy="128" r="76" className="wedge-guide"/><circle cx="190" cy="128" r="48" className="wedge-guide"/>
                       {spatialDemands.map((item, index) => {
                         const start = index * 90 + 5;
@@ -1256,43 +1281,43 @@ export default function App() {
                         const inner = 34;
                         const demandRadius = inner + item.value / balanceDemandMax * 72;
                         const allocatedRadius = inner + Math.min(item.value, item.allocation) / balanceDemandMax * 72;
-                        const unmet = Math.max(0, item.value - item.allocation);
-                        return <g key={item.name} className={expandedSpatialSector === item.name ? "chart-sector-focused" : ""} role="button" tabIndex={0} aria-label={`${item.name}: ${number(item.allocation)} ML/day allocated of ${number(item.value)} required`} onMouseEnter={() => setHoverSpatialSector(item.name)} onMouseLeave={() => setHoverSpatialSector(null)} onClick={() => setExpandedSpatialSector(item.name)} onKeyDown={(event) => {if(event.key === "Enter" || event.key === " "){event.preventDefault();setExpandedSpatialSector(item.name);}}}>
-                          <path d={wedgePath(190,128,inner,demandRadius,start,end)} fill={item.color} fillOpacity=".17" stroke="white" strokeWidth="2"><title>{item.name}: {number(item.value)} ML/day required</title></path>
-                          {item.allocation > 0 && <path d={wedgePath(190,128,inner,allocatedRadius,start,end)} fill={item.color} stroke="white" strokeWidth="2"><title>{number(item.allocation)} ML/day allocated</title></path>}
-                          {unmet > .01 && <path d={wedgePath(190,128,Math.max(inner,allocatedRadius),demandRadius,start,end)} fill={coverageColor(item.coverage,item.color)} stroke="white" strokeWidth="2"><title>{number(unmet)} ML/day unmet</title></path>}
+                        const unmet = item.unmet;
+                        return <g key={item.name} className={expandedSpatialSector === item.name ? "chart-sector-focused" : ""} role="button" tabIndex={0} aria-label={`${item.name}: ${number(item.allocation)} ML/day allocated of estimated demand ${number(item.value)} ML/day`} onMouseEnter={() => setHoverSpatialSector(item.name)} onMouseLeave={() => setHoverSpatialSector(null)} onClick={() => setExpandedSpatialSector(item.name)} onKeyDown={(event) => {if(event.key === "Enter" || event.key === " "){event.preventDefault();setExpandedSpatialSector(item.name);}}}>
+                          <path d={wedgePath(190,128,inner,demandRadius,start,end)} fill={item.color} fillOpacity=".17" stroke="white" strokeWidth="2"><title>{item.name}: estimated baseline demand {number(item.value)} ML/day</title></path>
+                          {item.allocation > 0 && <path d={wedgePath(190,128,inner,allocatedRadius,start,end)} fill={item.color} stroke="white" strokeWidth="2"><title>{number(item.allocation)} ML/day allocated{item.excess > .05 ? `, ${number(item.excess)} above estimate` : ""}</title></path>}
+                          {unmet > .01 && <path d={wedgePath(190,128,Math.max(inner,allocatedRadius),demandRadius,start,end)} fill={coverageColor(item.coverage,item.color)} stroke="white" strokeWidth="2"><title>{number(unmet)} ML/day estimated demand unmet</title></path>}
                         </g>;
                       })}
                       <circle cx="190" cy="128" r="31" className="wedge-center"/>
                       <text x="190" y="124" textAnchor="middle" className="wedge-center-label">ALLOCATED</text>
                       <text x="190" y="143" textAnchor="middle" className="wedge-center-value">{number(spatialResult.allocation)}</text>
-                      <text x="190" y="158" textAnchor="middle" className="wedge-center-unit">of {number(spatialResult.demand)} ML/day</text>
+                      <text x="190" y="158" textAnchor="middle" className="wedge-center-unit">of {number(spatialResult.demand)} ML/day estimate</text>
                     </svg>
-                    <div className="balance-chart-legend" aria-label="Sector demand details">
+                    <div className="balance-chart-legend" aria-label="Sector allocation details">
                       {spatialDemands.map((item) => <div key={item.name} style={{"--sector":item.color,"--status":coverageColor(item.coverage,item.color)} as React.CSSProperties}>
-                        <i/><span>{item.name}</span><b>{number(item.allocation)} / {number(item.value)}</b><small>{number(Math.max(0,item.value-item.allocation))} unmet</small>
+                        <i/><span>{item.name}</span><b>{number(item.allocation)} / {number(item.value)}</b><small>{item.unmet > .05 ? `${number(item.unmet)} demand unmet` : item.excess > .05 ? `+${number(item.excess)} above estimate` : "Estimate covered"}</small>
                       </div>)}
-                      <p><i className="legend-delivered"/>Allocated <i className="legend-unmet"/>Unmet</p>
+                      <p><i className="legend-delivered"/>Allocated <i className="legend-unmet"/>Estimated demand unmet</p>
                     </div>
                   </div>
                 </section>
                 <section className="demand-bubble-chart">
-                  <header><h3>Required vs allocated</h3><p>On the diagonal = fully covered; distance below it indicates unmet demand. Bubble size represents required demand.</p></header>
-                  <svg viewBox="0 0 420 264" role="img" aria-label={`Bubble chart of required versus allocated water. ${bubblePoints.map((item) => `${item.name}: ${number(item.value)} required, ${number(item.allocation)} allocated`).join("; ")}`}>
+                  <header><h3>Allocation vs estimated demand</h3><p>Below the diagonal = estimated demand is not fully covered. Values above the estimate show additional allocation.</p></header>
+                  <svg viewBox="0 0 420 264" role="img" aria-label={`Bubble chart of allocation and estimated demand. ${bubblePoints.map((item) => `${item.name}: ${number(item.value)} estimated demand, ${number(item.allocation)} allocated`).join("; ")}`}>
                     {[0,.5,1].map((ratio) => {
                       const x = bubblePlot.left + ratio * (bubblePlot.right - bubblePlot.left);
                       const y = bubblePlot.bottom - ratio * (bubblePlot.bottom - bubblePlot.top);
                       return <g key={ratio}><line x1={bubblePlot.left} x2={bubblePlot.right} y1={y} y2={y} className="bubble-grid"/><line x1={x} x2={x} y1={bubblePlot.top} y2={bubblePlot.bottom} className="bubble-grid"/><text x={x} y={bubblePlot.bottom + 14} textAnchor="middle" className="bubble-tick">{number(bubbleDomain * ratio)}</text><text x={bubblePlot.left - 8} y={y + 3} textAnchor="end" className="bubble-tick">{number(bubbleDomain * ratio)}</text></g>;
                     })}
                     <line x1={bubblePlot.left} y1={bubblePlot.bottom} x2={bubblePlot.right} y2={bubblePlot.top} className="bubble-equality"/>
-                    {bubblePoints.map((item) => <circle key={item.name} cx={item.x} cy={item.y} r={item.radius} fill={item.color} className="demand-bubble" stroke={expandedSpatialSector === item.name ? "#342740" : "white"} strokeWidth={expandedSpatialSector === item.name ? 3 : 2} role="button" tabIndex={0} aria-label={`${item.name}: ${number(item.value)} ML/day required, ${number(item.allocation)} allocated`} onClick={() => setExpandedSpatialSector(item.name)} onKeyDown={(event) => {if(event.key === "Enter" || event.key === " "){event.preventDefault();setExpandedSpatialSector(item.name);}}} onMouseEnter={() => setHoverSpatialSector(item.name)} onMouseLeave={() => setHoverSpatialSector(null)}>
-                      <title>{item.name}: {number(item.value)} ML/day required, {number(item.allocation)} ML/day allocated, {number(Math.max(0,item.value-item.allocation))} ML/day unmet ({Math.round(item.coverage*100)}% covered)</title>
+                    {bubblePoints.map((item) => <circle key={item.name} cx={item.x} cy={item.y} r={item.radius} fill={item.color} className="demand-bubble" stroke={expandedSpatialSector === item.name ? "#342740" : "white"} strokeWidth={expandedSpatialSector === item.name ? 3 : 2} role="button" tabIndex={0} aria-label={`${item.name}: ${number(item.value)} ML/day estimated demand, ${number(item.allocation)} ML/day allocated`} onClick={() => setExpandedSpatialSector(item.name)} onKeyDown={(event) => {if(event.key === "Enter" || event.key === " "){event.preventDefault();setExpandedSpatialSector(item.name);}}} onMouseEnter={() => setHoverSpatialSector(item.name)} onMouseLeave={() => setHoverSpatialSector(null)}>
+                      <title>{item.name}: estimated demand {number(item.value)} ML/day, allocated {number(item.allocation)} ML/day, estimated demand unmet {number(item.unmet)} ML/day, allocation above estimate {number(item.excess)} ML/day ({Math.round(item.coverage*100)}% covered)</title>
                     </circle>)}
-                    <text x="210" y="258" textAnchor="middle" className="bubble-axis-label">Required demand · ML/day</text>
+                    <text x="210" y="258" textAnchor="middle" className="bubble-axis-label">Estimated demand · ML/day</text>
                     <text x="12" y="116" textAnchor="middle" className="bubble-axis-label" transform="rotate(-90 12 116)">Allocated · ML/day</text>
                   </svg>
                   <div className="bubble-legend">{spatialDemands.map((item) => <span key={item.name} style={{"--sector":item.color} as React.CSSProperties}><i/>{item.name}</span>)}</div>
-                  <p className={`balance-delta ${spatialResult.shortage > .05 ? "deficit" : "surplus"}`}>{spatialResult.shortage > .05 ? `${number(spatialResult.shortage)} ML/day unmet across sectors` : `${number(Math.max(0,spatialResult.allocable-spatialResult.demand))} ML/day allocable after required demand`}</p>
+                  <p className={`balance-delta ${spatialResult.shortage > .05 ? "deficit" : "surplus"}`}>{spatialResult.shortage > .05 ? `${number(spatialResult.shortage)} ML/day of estimated demand unmet across sectors` : `${number(Math.max(0,spatialResult.allocable-spatialResult.allocation))} ML/day remains in the water pool`}{spatialResult.excess > .05 ? ` · ${number(spatialResult.excess)} ML/day allocated above estimated demand` : ""}</p>
                 </section>
                 <section className="reserve-strip" aria-label="Protected reservoir reserve">
                   <header><h3>Protected reserve</h3><p>{number(spatialStorage.reserveVolume)} ML protected of {number(spatialStorage.capacity)} ML capacity · Current storage {number(spatialStorage.ending)} ML</p></header>
@@ -1352,8 +1377,10 @@ export default function App() {
                   <dl>
                     {[
                       ["Source inflow", number(r.supply) + " ML/day"],
-                      ["Water demand", number(r.demand) + " ML/day"],
-                      ["Unmet demand", number(r.shortage) + " ML/day"],
+                      ["Estimated baseline demand", number(r.demand) + " ML/day"],
+                      ["Water allocated", number(r.allocation) + " ML/day"],
+                      ["Unmet estimated demand", number(r.shortage) + " ML/day"],
+                      ["Allocable water", number(r.allocable) + " ML/day"],
                       [
                         "Household coverage",
                         number(r.coverage[0] * 100) + "%",
@@ -1426,7 +1453,7 @@ export default function App() {
                     {sectorNames.map((s) => (
                       <th key={s}>
                         {s}
-                        <small>ML/day demand</small>
+                        <small>ML/day estimated baseline demand</small>
                       </th>
                     ))}
                     <th>
@@ -1452,7 +1479,7 @@ export default function App() {
                             min="0"
                             max="200"
                             step=".5"
-                            aria-label={`${m.name} ${sectorNames[i]} demand`}
+                            aria-label={`${m.name} ${sectorNames[i]} estimated baseline demand`}
                             value={v}
                             onChange={(e) => {
                               const values = [
@@ -1497,10 +1524,10 @@ export default function App() {
                   <tr>
                     <th>Municipality</th>
                     <th>Supply</th>
-                    <th>Demand</th>
-                    <th>Allocation</th>
+                    <th>Estimated baseline demand</th>
+                    <th>Water allocated</th>
                     <th>Closing storage</th>
-                    <th>Unmet demand</th>
+                    <th>Unmet estimated demand</th>
                     <th>Assistance spent</th>
                   </tr>
                 </thead>
@@ -1550,15 +1577,15 @@ export default function App() {
                 ],
                 [
                   "Supply and storage",
-                  "Gross inflow is the sum of source outputs after the output multiplier and drought reduction, plus any supplementary supply. The demonstration assumptions are 28% non-revenue water (NRW) and a protected reserve equal to 22% of reservoir capacity; both are editable in Sources. Allocable water = max(0, opening storage + inflow − protected reserve volume) × (1 − NRW). Actual allocations cannot exceed this amount. Closing storage subtracts the physical withdrawal needed to deliver allocations (allocation ÷ (1 − NRW)) from opening storage + inflow, then applies reservoir capacity; excess is spill. This is a one-day illustrative balance, not an operational forecast.",
+                  "Gross inflow is the sum of source outputs after the output multiplier and drought reduction, plus any supplementary supply. The demonstration assumptions are 28% non-revenue water (NRW) and a protected reserve equal to 22% of reservoir capacity; both are editable in Sources. Allocable water = max(0, opening storage + inflow − protected reserve volume) × (1 − NRW). Total allocation served cannot exceed this shared municipal pool. Closing storage subtracts the physical withdrawal needed for delivered allocations (allocation ÷ (1 − NRW)) from opening storage + inflow, then applies reservoir capacity; excess is spill. Water not allocated remains in storage. This is a one-day illustrative balance, not an operational forecast.",
                 ],
                 [
-                  "Allocation and unmet demand",
-                  "Required demand = each sector's baseline demand × the demand multiplier. Target allocation also applies the allocation target. When water is limited, distribute by each remaining target × its user-set distribution-channel share, redistributing excess from sectors whose targets are already met. Actual allocation is capped by allocable water after the NRW and protected-reserve assumptions. Unmet demand = required demand − actual allocation. Supply gap excludes storage and equals max(demand − current inflow, 0).",
+                  "Estimated demand and sector allocations",
+                  "Sector demand values are fixed illustrative municipal estimates used as a reference, not sliders in the simulation. Each sector has one allocation request in ML/day. The scenario's priority order serves requests first; all sectors draw from the same municipality pool, and delivered allocations are capped by water available after NRW and the protected reserve. Requests may exceed estimated demand, but total delivered water still cannot exceed the pool. Unmet estimated demand is calculated per sector; one sector's extra allocation does not cancel another sector's shortfall. Supply gap excludes storage and equals max(total estimated demand − source inflow, 0).",
                 ],
                 [
                   "Essential-needs protection",
-                  "The optional policy first reserves critical-service demand, then 80% of household demand, as available water permits. The remaining supply follows the user-set distribution channels; unused channel water is reallocated to sectors that still need water. This is a user-selected scenario, not an automatic policy recommendation.",
+                  "The optional policy first assigns critical-service allocations up to estimated demand, then household allocations up to 80% of estimated demand, as available water permits. Remaining requests follow the priority order saved with the scenario. Staff set this scenario rule; the system does not recommend an order.",
                 ],
                 [
                   "Affordability and assistance",
@@ -1566,7 +1593,7 @@ export default function App() {
                 ],
                 [
                   "People and livelihoods",
-                  "Households with unmet needs = household count × household unmet-demand share, rounded per LGU. This is an equivalent household estimate, not identified beneficiaries. Agriculture and fisheries unmet demand indicates exposure; it does not estimate monetary losses.",
+                  "Households with unmet needs = household count × household estimated-demand shortfall share, rounded per LGU. This is an equivalent household estimate, not identified beneficiaries. Agriculture and fisheries unmet estimated demand indicates exposure; it does not estimate monetary losses.",
                 ],
                 [
                   "Sources and provider relationships",
@@ -1626,14 +1653,14 @@ export default function App() {
           {daloyQuestion && <div className="daloy-answer" aria-live="polite">
             <span><Sparkles size={13}/> {daloyQuestion}</span>
             {daloyQuestion === daloyQuestions[0] && <>
-              <strong>{largestUnmet ? `The largest demand shortfall is in ${largestUnmet.name.toLowerCase()}.` : "No sector has unmet demand in the current scenario."}</strong>
-              {largestUnmet && <dl><div><dt>Required</dt><dd>{number(largestUnmet.value)} ML/day</dd></div><div><dt>Allocated</dt><dd>{number(largestUnmet.allocation)} ML/day</dd></div><div><dt>Unmet</dt><dd>{number(largestUnmet.unmet)} ML/day</dd></div><div><dt>Covered</dt><dd>{Math.round(largestUnmet.coverage*100)}%</dd></div></dl>}
-              <p>Current NRW is {number(spatialInput.nrw)}% (demo assumption), equivalent to about {number(scenarioSourceLoss)} ML/day of modeled water loss before delivery. Allocable water is {number(spatialResult.allocable)} ML/day for {number(spatialResult.demand)} ML/day required across {spatialMunicipality.name}.</p>
+              <strong>{largestUnmet ? `The largest estimated-demand shortfall is in ${largestUnmet.name.toLowerCase()}.` : "All current allocation requests are served."}</strong>
+              {largestUnmet && <dl><div><dt>Estimated demand</dt><dd>{number(largestUnmet.value)} ML/day</dd></div><div><dt>Allocation requested</dt><dd>{number(largestUnmet.request)} ML/day</dd></div><div><dt>Water allocated</dt><dd>{number(largestUnmet.allocation)} ML/day</dd></div><div><dt>Demand unmet</dt><dd>{number(largestUnmet.unmet)} ML/day</dd></div></dl>}
+              <p>Current NRW is {number(spatialInput.nrw)}% (demo assumption), equivalent to about {number(scenarioSourceLoss)} ML/day of modeled water loss before delivery. Allocable water is {number(spatialResult.allocable)} ML/day against {number(spatialResult.demand)} ML/day of estimated baseline demand in {spatialMunicipality.name}.</p>
               <button className="daloy-action" onClick={() => {setView("Reservoir");setExploreLayout("planning-expanded");setNrwSimulatorOpen(true);setDaloyOpen(false);window.setTimeout(() => document.getElementById("spatial-section")?.scrollIntoView({behavior:"smooth",block:"start"}), 0);}}>Inspect NRW and the leak in 3D <ArrowRight size={14}/></button>
             </>}
-            {daloyQuestion === daloyQuestions[1] && (unmetSectors.length ? <><strong>{unmetSectors.length} {unmetSectors.length === 1 ? "sector has" : "sectors have"} unmet demand:</strong><dl>{unmetSectors.map((item) => <div key={item.name}><dt>{item.name}</dt><dd>{number(item.unmet)} ML/day · {Math.round(item.coverage*100)}% covered</dd></div>)}</dl>{largestUnmet?.name === "Households" && <p>About {number(spatialResult.affected)} households are equivalent to the current household coverage shortfall.</p>}</> : <><strong>All current sector demand is covered.</strong><p>No unmet demand is calculated for this scenario.</p></>)}
-            {daloyQuestion === daloyQuestions[2] && (spatialResult.shortage > .05 ? <><strong>{number(spatialResult.allocable)} ML/day is allocable against {number(spatialResult.demand)} ML/day required.</strong><p>The model applies {number(spatialInput.nrw)}% non-revenue water loss and protects {number(spatialInput.reserve)}% of reservoir capacity. Current source inflow is {number(spatialResult.supply)} ML/day; the remaining {number(spatialResult.shortage)} ML/day is unmet.</p>{spatialInput.allocation < 100 && <p>The allocation target is also set to {number(spatialInput.allocation)}%.</p>}</> : <><strong>There is no current supply shortage.</strong><p>Allocable water covers the present required demand. Any changes to source output, losses, reserve, or sector needs update this reading.</p></>)}
-            {daloyQuestion === daloyQuestions[3] && <><strong>Change one assumption at a time to see what moves the balance.</strong><p>Try reducing NRW, increasing source output, or shifting a distribution channel. Watch allocable water, unmet demand, and the highlighted sector update together.</p><button className="daloy-action" onClick={() => {setControlTab("Sources");setControlsOpen(true);setDaloyOpen(false);}}>Open water controls <ArrowRight size={14}/></button></>}
+            {daloyQuestion === daloyQuestions[1] && (unmetSectors.length ? <><strong>{unmetSectors.length} {unmetSectors.length === 1 ? "sector has" : "sectors have"} unmet estimated demand:</strong><dl>{unmetSectors.map((item) => <div key={item.name}><dt>{item.name}</dt><dd>{number(item.unmet)} ML/day · {Math.round(item.coverage*100)}% covered</dd></div>)}</dl>{largestUnmet?.name === "Households" && <p>About {number(spatialResult.affected)} households are equivalent to the current household allocation shortfall.</p>}</> : <><strong>All estimated demand is covered.</strong><p>No estimated-demand shortfall is calculated for this scenario.</p></>)}
+            {daloyQuestion === daloyQuestions[2] && (spatialResult.shortage > .05 ? <><strong>{number(spatialResult.allocable)} ML/day is available against {number(spatialResult.demand)} ML/day of estimated baseline demand.</strong><p>The model applies {number(spatialInput.nrw)}% non-revenue water loss and protects {number(spatialInput.reserve)}% of reservoir capacity. Allocation requests share the available pool in this scenario’s priority order. Source inflow is {number(spatialResult.supply)} ML/day; {number(spatialStorageUsed)} ML is withdrawn from storage, leaving {number(spatialResult.shortage)} ML/day of estimated demand unmet.</p></> : <><strong>There is no current estimated-demand shortfall.</strong><p>Available allocations cover estimated demand. Any changes to source output, reserve, allocation requests, or priority order update this reading.</p></>)}
+            {daloyQuestion === daloyQuestions[3] && <><strong>Change one assumption at a time to see what moves the balance.</strong><p>Adjust sector allocation requests or their priority, reduce NRW, or increase source output. Watch allocated water, estimated-demand shortfalls, and closing storage update together.</p><button className="daloy-action" onClick={() => {setControlTab("Allocation");setControlsOpen(true);setDaloyOpen(false);}}>Open allocation controls <ArrowRight size={14}/></button></>}
             {spatialResult.developmentCount>0 && <p>{spatialResult.developmentCount} {spatialResult.developmentCount===1?"included establishment adds":"included establishments add"} {number(spatialResult.developmentDemand)} ML/day to {spatialMunicipality.name}'s sector demand. These values come from the profiles set in the Development planner.</p>}
             <small>Computed directly from the current scenario inputs; no extra AI estimate.</small>
           </div>}

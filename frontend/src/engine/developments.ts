@@ -22,10 +22,13 @@ export type AssetTemplate = {
   id: string;
   name: string;
   category: string;
-  sector: 0 | 1 | 2 | 3;
+  sector: 0 | 1 | 2 | 3 | null;
   description: string;
+  placeable?: boolean;
   fields: AssetField[];
   litersPerDay: (v: Record<string, number>) => number;
+  addedSupplyMlDay?: (v: Record<string, number>) => number;
+  nrwReductionPoints?: (v: Record<string, number>) => number;
 };
 
 // Illustrative planning factors in liters/day. These are editable scenario
@@ -121,6 +124,37 @@ export const assetTemplates: AssetTemplate[] = [
     litersPerDay:v=>v.birds*.5+v.cleaning*1000+v.workers*80,
   },
   {
+    id:"pipeline",name:"Water pipeline",category:"Water infrastructure",sector:null,
+    description:"New or upgraded conveyance. Adds an editable illustrative daily flow to the shared water balance.",
+    fields:[
+      {key:"length",label:"Pipeline length",unit:"km",min:0,max:100,step:.1,initial:4},
+      {key:"flow",label:"Additional conveyed flow",unit:"ML/day",min:0,max:50,step:.1,initial:2},
+    ],
+    litersPerDay:()=>0,
+    addedSupplyMlDay:v=>v.flow,
+  },
+  {
+    id:"watershed",name:"Watershed enhancement",category:"Water infrastructure",sector:null,
+    description:"Restoration adds an editable illustrative yield to the municipality’s source supply.",
+    fields:[
+      {key:"area",label:"Restoration area",unit:"hectares",min:0,max:50000,initial:120},
+      {key:"yield",label:"Additional source yield",unit:"ML/day",min:0,max:25,step:.1,initial:1},
+    ],
+    litersPerDay:()=>0,
+    addedSupplyMlDay:v=>v.yield,
+  },
+  {
+    id:"pipeline-repair",name:"Pipeline repair",category:"Water infrastructure",sector:null,
+    description:"Repair existing municipal pipelines and any Water pipeline assets already in the plan. The NRW improvement applies across the shared network; no new structure is placed.",
+    placeable:false,
+    fields:[
+      {key:"length",label:"Pipeline repaired",unit:"km",min:0,max:100,step:.1,initial:2},
+      {key:"lossReduction",label:"NRW recovered",unit:"percentage points",min:0,max:35,step:.5,initial:4},
+    ],
+    litersPerDay:()=>0,
+    nrwReductionPoints:v=>v.lossReduction,
+  },
+  {
     id:"government",name:"Government facility",category:"Public services",sector:3,
     description:"Staff, public visits, and building services.",
     fields:[
@@ -143,17 +177,130 @@ export const assetTemplates: AssetTemplate[] = [
 ];
 
 export const assetTemplateById = Object.fromEntries(assetTemplates.map(template => [template.id,template])) as Record<string,AssetTemplate>;
+
+// Demonstration project costs in millions of pesos. They are editable planner
+// assumptions and should not be treated as estimates for a real project.
+const demoProjectCosts: Record<string, { capex: number; annualOpex: number }> = {
+  mall:{capex:1800,annualOpex:45}, subdivision:{capex:650,annualOpex:18}, hospital:{capex:2500,annualOpex:120},
+  school:{capex:300,annualOpex:14}, hotel:{capex:900,annualOpex:55}, market:{capex:220,annualOpex:15},
+  factory:{capex:1400,annualOpex:90}, poultry:{capex:90,annualOpex:6}, government:{capex:450,annualOpex:24},
+  evacuation:{capex:180,annualOpex:8}, pipeline:{capex:180,annualOpex:8}, watershed:{capex:85,annualOpex:4},
+  "pipeline-repair":{capex:28,annualOpex:1.5},
+};
+
+export function developmentCostFields(template: AssetTemplate): AssetField[] {
+  const defaults=demoProjectCosts[template.id] || {capex:0,annualOpex:0};
+  return [
+    {key:"capexMillion",label:"Capital expenditure (CAPEX)",unit:"₱ million",min:0,max:100000,step:1,initial:defaults.capex},
+    {key:"annualOpexMillion",label:"Annual operating expenditure (OPEX)",unit:"₱ million/year",min:0,max:10000,step:0.1,initial:defaults.annualOpex},
+    {key:"usefulLifeYears",label:"Useful life",unit:"years",min:1,max:100,initial:15},
+    {key:"equityScore",label:"Equity score",unit:"0–100 · GIS default 50",min:0,max:100,initial:50},
+    {key:"economicBenefitScore",label:"Economic / livelihood score",unit:"0–100 · GIS default 50",min:0,max:100,initial:50},
+    {key:"reliabilityScore",label:"Reliability score",unit:"0–100 · GIS default 50",min:0,max:100,initial:50},
+  ];
+}
+
 export function defaultDevelopmentInputs(template: AssetTemplate): Record<string,number> {
-  return Object.fromEntries(template.fields.map(field => [field.key,field.initial]));
+  return Object.fromEntries([...template.fields,...developmentCostFields(template)].map(field => [field.key,field.initial]));
 }
 export function calculateDevelopmentDemand(development: Pick<Development,"templateId" | "inputs">): number {
   const template=assetTemplateById[development.templateId];
-  if(!template) return 0;
+  if(!template || template.sector===null) return 0;
   const values=Object.fromEntries(template.fields.map(field => {
     const raw=development.inputs[field.key];
     return [field.key,Number.isFinite(raw)?Math.max(field.min,Math.min(field.max,raw)):field.initial];
   }));
   return Math.max(0,template.litersPerDay(values))/1_000_000;
+}
+
+export function calculateInfrastructureImpact(development: Pick<Development,"templateId" | "inputs">, drought = 0) {
+  const template=assetTemplateById[development.templateId];
+  if(!template) return {addedSupplyMlDay:0,nrwReductionPoints:0};
+  const values=Object.fromEntries(template.fields.map(field=>{
+    const raw=development.inputs[field.key];
+    return [field.key,Number.isFinite(raw)?Math.max(field.min,Math.min(field.max,raw)):field.initial];
+  }));
+  const droughtFactor=1-Math.max(0,Math.min(100,drought))/100;
+  return {
+    addedSupplyMlDay:Math.max(0,template.addedSupplyMlDay?.(values) || 0)*droughtFactor,
+    nrwReductionPoints:Math.max(0,template.nrwReductionPoints?.(values) || 0),
+  };
+}
+
+export function developmentFinancials(development: Pick<Development,"templateId" | "inputs">) {
+  const template=assetTemplateById[development.templateId];
+  if(!template) return {capexMillion:0,annualOpexMillion:0,usefulLifeYears:15,equityScore:50,economicBenefitScore:50,reliabilityScore:50};
+  const fields=developmentCostFields(template);
+  const read=(field:AssetField)=>{
+    const raw=development.inputs[field.key];
+    return Number.isFinite(raw)?Math.max(field.min,Math.min(field.max,raw)):field.initial;
+  };
+  return {
+    capexMillion:read(fields[0]!),
+    annualOpexMillion:read(fields[1]!),
+    usefulLifeYears:read(fields[2]!),
+    equityScore:read(fields[3]!),
+    economicBenefitScore:read(fields[4]!),
+    reliabilityScore:read(fields[5]!),
+  };
+}
+
+export type InterventionValuation = {
+  capexPhp:number;
+  annualOpexPhp:number;
+  usefulLifeYears:number;
+  waterGainM3PerDay:number;
+  householdsBenefited:number;
+};
+
+/** Mirrors GIS InterventionValuationService's simple, undiscounted valuation. */
+export function calculateInterventionValuation(input:InterventionValuation) {
+  const capex=Math.max(0,input.capexPhp);
+  const annualOpex=Math.max(0,input.annualOpexPhp);
+  const usefulLifeYears=Math.max(1,Math.trunc(input.usefulLifeYears));
+  const waterGainM3PerDay=Math.max(0,input.waterGainM3PerDay);
+  const householdsBenefited=Math.max(0,Math.trunc(input.householdsBenefited));
+  const simpleLifecycleCostPhp=capex+annualOpex*usefulLifeYears;
+  const lifetimeWaterM3=waterGainM3PerDay*365*usefulLifeYears;
+  return {
+    simpleLifecycleCostPhp,
+    lifetimeWaterM3,
+    simpleLifecycleCostPerM3Php:lifetimeWaterM3>0?simpleLifecycleCostPhp/lifetimeWaterM3:null,
+    capexPerHouseholdPhp:householdsBenefited>0?capex/householdsBenefited:null,
+    economicLossAvoidedPhpYear:null,
+  };
+}
+
+export type BenefitPerPesoProject = InterventionValuation & {
+  id:string;
+  name:string;
+  equityScore:number;
+  economicBenefitScore:number;
+  reliabilityScore:number;
+};
+
+/** Mirrors GIS PublicBenefitPerPesoService's default normalized 0–100 ranking. */
+export function calculateBenefitPerPeso(projects:BenefitPerPesoProject[]) {
+  if(projects.length===0)return [];
+  const valuations=projects.map(project=>calculateInterventionValuation(project));
+  const maxWaterGain=Math.max(...projects.map(project=>Math.max(0,project.waterGainM3PerDay)));
+  const validCosts=valuations.map(value=>value.simpleLifecycleCostPerM3Php).filter((value):value is number=>value!==null&&value>0);
+  const minCost=validCosts.length?Math.min(...validCosts):null;
+  return projects.map((project,index)=>{
+    const valuation=valuations[index];
+    const waterBenefit=maxWaterGain>0?Math.max(0,project.waterGainM3PerDay)/maxWaterGain*100:0;
+    const equity=Math.max(0,Math.min(100,project.equityScore));
+    const economic=Math.max(0,Math.min(100,project.economicBenefitScore));
+    const reliability=Math.max(0,Math.min(100,project.reliabilityScore));
+    const cost=valuation.simpleLifecycleCostPerM3Php;
+    const costEfficiency=minCost!==null&&cost!==null&&cost>0?Math.min(100,minCost/cost*100):0;
+    return {
+      id:project.id,
+      valuation,
+      subscores:{waterBenefit,equity,economicLivelihood:economic,reliability,costEfficiency},
+      publicBenefitScore:waterBenefit*.30+equity*.25+economic*.20+reliability*.15+costEfficiency*.10,
+    };
+  }).sort((a,b)=>b.publicBenefitScore-a.publicBenefitScore).map((project,index)=>({...project,rank:index+1}));
 }
 export function validDevelopment(value: unknown): value is Development {
   if(!value || typeof value!=="object") return false;

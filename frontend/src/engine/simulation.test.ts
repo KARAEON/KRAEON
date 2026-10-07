@@ -1,7 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {baseline,simulate,municipalities} from './simulation';
-import { assetTemplateById, calculateDevelopmentDemand, defaultDevelopmentInputs, type Development } from './developments';
+import { assetTemplateById, calculateBenefitPerPeso, calculateDevelopmentDemand, calculateInterventionValuation, defaultDevelopmentInputs, type BenefitPerPesoProject, type Development } from './developments';
+test('planner intervention valuation matches GIS simple lifecycle calculations',()=>{
+  const result=calculateInterventionValuation({capexPhp:100000,annualOpexPhp:1000,usefulLifeYears:10,waterGainM3PerDay:10,householdsBenefited:100});
+  assert.equal(result.simpleLifecycleCostPhp,110000);
+  assert.equal(result.lifetimeWaterM3,36500);
+  assert.ok(Math.abs((result.simpleLifecycleCostPerM3Php||0)-110000/36500)<1e-12);
+  assert.equal(result.capexPerHouseholdPhp,1000);
+  assert.equal(result.economicLossAvoidedPhpYear,null);
+  assert.equal(calculateInterventionValuation({capexPhp:100,annualOpexPhp:0,usefulLifeYears:15,waterGainM3PerDay:0,householdsBenefited:0}).simpleLifecycleCostPerM3Php,null);
+});
+test('planner benefit-per-peso uses GIS default weights and ranks the portfolio',()=>{
+  const projects:BenefitPerPesoProject[]=[
+    {id:'a',name:'A',capexPhp:100000,annualOpexPhp:1000,usefulLifeYears:10,waterGainM3PerDay:10,householdsBenefited:5,equityScore:50,economicBenefitScore:50,reliabilityScore:50},
+    {id:'b',name:'B',capexPhp:100000,annualOpexPhp:1000,usefulLifeYears:10,waterGainM3PerDay:20,householdsBenefited:10,equityScore:50,economicBenefitScore:50,reliabilityScore:50},
+  ];
+  const result=calculateBenefitPerPeso(projects);
+  assert.equal(result[0].id,'b');
+  assert.equal(result[0].rank,1);
+  assert.equal(result[0].publicBenefitScore,70);
+  assert.equal(result[1].publicBenefitScore,50);
+});
+import { migrateScenario, readSavedScenarios, persistSavedScenarios, scenarioStorageKey, scenarioBackupKey } from './scenarios';
 test('baseline includes the configured protected reserve in closing storage',()=>{const r=simulate(baseline());assert.equal(r.supply,76);assert.equal(r.demand,85);assert.equal(r.results.length,3);assert.equal(r.gap,9);assert.ok(Math.abs(r.ending-17.6)<1e-8);});
 test('drought, supplementary supply, and allocation obey daily physical mass balance',()=>{for(let drought=0;drought<=100;drought+=10)for(const allocation of [0,50,100]){const s=baseline();for(const p of Object.values(s.inputs)){p.drought=drought;p.allocation=allocation;p.protect=true;p.allocationShares=[55,20,15,10];}for(const r of simulate(s).results){assert.ok(r.ending>=0&&r.ending<=r.capacity);assert.ok(Math.abs(r.opening+r.supply-r.allocation/(1-r.nrw)-r.ending-r.spill)<1e-8);r.coverage.forEach(c=>assert.ok(c>=0&&c<=1.000001));assert.ok(r.allocation<=r.demand+1e-8);}}});
 test('zero source output draws closing storage down to the protected reserve',()=>{const s=baseline();s.inputs.pinabacdao.supply=0;const r=simulate(s,'pinabacdao').results[0];assert.equal(r.supply,0);assert.ok(Math.abs(r.ending-r.reserveVolume)<1e-8);assert.ok(Math.abs(Math.max(0,r.ending-r.reserveVolume))<1e-8);assert.ok(r.shortage>0);});
@@ -35,4 +56,129 @@ test('multiple developments combine and preserve physical mass balance',()=>{
   assert.ok(result.shortage>0);
   assert.ok(Math.abs(result.opening+result.supply-result.allocation/(1-result.nrw)-result.ending-result.spill)<1e-8);
   assert.equal(result.households,38000+Math.round(1200*.85));
+});
+
+test('volume requests use the shared pool in saved priority order',()=>{
+  const s=baseline();
+  const p=s.inputs.pinabacdao;
+  p.supply=0;p.nrw=0;p.reserve=0;p.allocationTargets=[8,8,8,8];
+  assert.deepEqual(simulate(s,'pinabacdao').allocations,[8,0,0,0]);
+  s.priorityOrder=[2,1,0,3];
+  const r=simulate(s,'pinabacdao');
+  assert.deepEqual(r.allocations,[0,0,8,0]);
+  assert.equal(r.allocation,r.allocable);
+  assert.equal(r.excessAllocations[2],6);
+  assert.equal(r.shortage,16);
+  assert.equal(r.coverage[2],1);
+});
+
+test('essential-needs protection precedes scenario priority',()=>{
+  const s=baseline();const p=s.inputs.pinabacdao;
+  p.supply=0;p.nrw=0;p.reserve=0;p.protect=true;p.allocationTargets=[8,8,8,8];s.priorityOrder=[1,2,0,3];
+  const r=simulate(s,'pinabacdao');
+  assert.equal(r.allocations[3],1);
+  assert.ok(Math.abs(r.allocations[0]-5.6)<1e-9);
+  assert.ok(Math.abs(r.allocations[1]-1.4)<1e-9);
+  assert.equal(r.allocations[2],0);
+});
+
+test('zero requests preserve water and invalid priority falls back to the default',()=>{
+  const s=baseline();const p=s.inputs.pinabacdao;
+  p.allocationTargets=[0,0,0,0];
+  assert.equal(simulate(s,'pinabacdao').allocation,0);
+  p.supply=0;p.nrw=0;p.reserve=0;p.allocationTargets=[8,8,8,8];
+  s.priorityOrder=[0,0,0,0] as typeof s.priorityOrder;
+  assert.deepEqual(simulate(s,'pinabacdao').allocations,[8,0,0,0]);
+});
+
+test('new allocation requests preserve physical water balance across scarcity and excess',()=>{
+  for(const drought of [0,50,100])for(const nrw of [0,28,80])for(const requests of [[0,0,0,0],[100,100,100,100],[3,10,1,2]]){
+    const s=baseline();const p=s.inputs.pinabacdao;
+    p.drought=drought;p.nrw=nrw;p.allocationTargets=requests as typeof p.allocationTargets;
+    const r=simulate(s,'pinabacdao').results[0];
+    assert.ok(r.allocation<=r.allocable+1e-9);
+    assert.ok(Math.abs(r.opening+r.supply-r.allocation/(1-r.nrw)-r.ending-r.spill)<1e-9);
+    assert.equal(r.shortage,r.unmetBySector.reduce((a,b)=>a+b,0));
+    assert.ok(r.coverage.every(c=>c>=0&&c<=1));
+  }
+});
+
+function infrastructure(templateId:string,id=templateId):Development {
+  return {id,municipalityId:'pinabacdao',templateId,position:[0,0],inputs:defaultDevelopmentInputs(assetTemplateById[templateId]),active:true,status:'proposed'};
+}
+
+test('pipeline and watershed supply follow drought without adding sector demand',()=>{
+  const s=baseline();s.inputs.pinabacdao.drought=50;
+  const before=simulate(s,'pinabacdao');
+  s.developments=[infrastructure('pipeline'),infrastructure('watershed')];
+  const r=simulate(s,'pinabacdao');
+  assert.equal(r.infrastructureSupplyMlDay,1.5);
+  assert.equal(r.supply-before.supply,1.5);
+  assert.equal(r.developmentDemand,0);
+  assert.equal(r.existingDemand,before.existingDemand);
+  assert.equal(simulate(s,'catbalogan').infrastructureSupplyMlDay,0);
+});
+
+test('pipeline repair reduces existing network losses without creating supply or a placeable asset',()=>{
+  const s=baseline();const before=simulate(s,'pinabacdao');const repair=infrastructure('pipeline-repair');
+  assert.equal(assetTemplateById['pipeline-repair'].placeable,false);
+  s.developments=[repair];
+  const r=simulate(s,'pinabacdao');
+  assert.equal(r.results[0].nrw,.24);
+  assert.equal(r.supply,before.supply);
+  assert.equal(r.developmentDemand,0);
+  assert.ok(r.allocable>before.allocable);
+  repair.inputs.lossReduction=35;
+  assert.equal(simulate(s,'pinabacdao').results[0].nrw,0);
+  repair.active=false;
+  assert.equal(simulate(s,'pinabacdao').allocable,before.allocable);
+  s.developments=[];
+  assert.equal(simulate(s,'pinabacdao').allocable,before.allocable);
+});
+
+test('legacy scenarios migrate demand and allocation while removing percentage fields',()=>{
+  const legacy=baseline();const p=legacy.inputs.pinabacdao;
+  p.demand=120;p.allocation=50;p.allocationShares=[55,20,15,10];
+  delete (p as Partial<typeof p>).allocationTargets;
+  const migrated=migrateScenario(legacy)!;
+  assert.deepEqual(migrated.priorityOrder,[0,3,1,2]);
+  assert.deepEqual(migrated.inputs.pinabacdao.sectorDemand,[8.4,9.6,2.4,1.2]);
+  assert.deepEqual(migrated.inputs.pinabacdao.allocationTargets,[4.2,4.8,1.2,.6]);
+  for(const key of ['demand','allocation','allocationShares'])assert.equal(key in migrated.inputs.pinabacdao,false);
+});
+
+test('migration bounds requests using active infrastructure and preserves new priority',()=>{
+  const s=baseline();s.inputs.pinabacdao.supply=0;s.inputs.pinabacdao.allocationTargets=[40,0,0,0];
+  s.priorityOrder=[3,2,1,0];s.developments=[infrastructure('pipeline')];s.developments[0].inputs.flow=40;
+  const expected=simulate(s,'pinabacdao').allocable;
+  const migrated=migrateScenario(s)!;
+  assert.equal(migrated.inputs.pinabacdao.allocationTargets[0],Math.min(40,expected));
+  assert.deepEqual(migrated.priorityOrder,[3,2,1,0]);
+  assert.deepEqual(migrateScenario(migrated),migrated);
+});
+
+test('invalid saved entries do not discard valid scenarios or overwrite storage',()=>{
+  const good=baseline('saved','Saved');
+  const bad=structuredClone(good);bad.inputs.pinabacdao.sourceOutputs=[];
+  const original=JSON.stringify([null,bad,good]);
+  const storage={getItem:()=>original};
+  assert.deepEqual(readSavedScenarios(storage).map(s=>s.id),['saved']);
+  assert.deepEqual(readSavedScenarios({getItem:()=>'{invalid'}),[]);
+});
+
+test('saving backs up exact original JSON once before replacing saved scenarios',()=>{
+  const original='[ {"id":"original"} ]';const items=new Map([[scenarioStorageKey,original]]);
+  const storage={getItem:(key:string)=>items.get(key)??null,setItem:(key:string,value:string)=>{items.set(key,value);}};
+  persistSavedScenarios([baseline('saved','Saved')],storage);
+  assert.equal(items.get(scenarioBackupKey),original);
+  persistSavedScenarios([baseline('saved-2','Saved 2')],storage);
+  assert.equal(items.get(scenarioBackupKey),original);
+  assert.equal(JSON.parse(items.get(scenarioStorageKey)!)[0].id,'saved-2');
+});
+
+test('backup storage failure leaves existing scenarios unchanged',()=>{
+  const original=JSON.stringify([baseline('saved','Saved')]);const items=new Map([[scenarioStorageKey,original]]);
+  const storage={getItem:(key:string)=>items.get(key)??null,setItem:(key:string,value:string)=>{if(key===scenarioBackupKey)throw new Error('Storage full');items.set(key,value);}};
+  assert.throws(()=>persistSavedScenarios([baseline('new','New')],storage),/Storage full/);
+  assert.equal(items.get(scenarioStorageKey),original);
 });

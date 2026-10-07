@@ -17,7 +17,7 @@ const palette = {
 };
 
 type SectorName = string;
-type SectorDatum = { name: SectorName; value: number; allocation: number; coverage: number; color: string };
+type SectorDatum = { name: SectorName; value: number; allocation: number; coverage: number; color: string; excess?: number; unmet?: number };
 const sectorRoles: Record<SectorName, string> = {
   Households: "Homes and residential demand",
   "Agriculture + fisheries": "Farm plots and fisheries",
@@ -145,6 +145,15 @@ function DevelopmentStructure({ templateId, x, z, status = "proposed", ghost = f
     {templateId==="market" ? <>{block("base",[0,.2,0],[1.5,.35,.94])}{roof("roof",.45,[1.7,.13,1.08])}{[-.45,0,.45].map((offset,index)=>block(`stall-${index}`,[offset,.14,.5],[.28,.17,.06],ghost?color:"#f4eee5"))}</> : null}
     {templateId==="factory" ? <>{block("shed",[0,.42,0],[1.55,.8,.88])}{roof("roof",.86,[1.68,.1,.98])}<mesh position={[.52,1.12,-.2]}><cylinderGeometry args={[.11,.15,.72,6]}/>{material(ghost?color:"#cac4cf")}</mesh></> : null}
     {templateId==="poultry" ? <>{block("shed",[0,.27,0],[1.5,.47,.83])}{roof("roof",.55,[1.6,.1,.92])}{[-.48,0,.48].map((offset,index)=>block(`vent-${index}`,[offset,.32,.43],[.14,.11,.035],ghost?color:"#edeae5"))}</> : null}
+    {templateId==="pipeline" ? <>
+      <mesh position={[0,.25,0]} rotation={[0,0,Math.PI/2]} castShadow><cylinderGeometry args={[.14,.14,2.35,12]}/>{material(ghost?color:"#56bac5")}</mesh>
+      {[-.82,.82].map((offset,index)=><mesh key={index} position={[offset,.25,0]} rotation={[0,0,Math.PI/2]}><torusGeometry args={[.18,.045,6,12]}/>{material(ghost?color:"#82908d")}</mesh>)}
+    </> : null}
+    {templateId==="watershed" ? <>
+      <mesh position={[0,.07,0]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[1.0,10]}/>{material(ghost?color:"#c7d0c4")}</mesh>
+      {[-.55,0,.55].map((offset,index)=><mesh key={index} position={[offset,.42,index%2?.22:-.2]} castShadow><coneGeometry args={[.22,.74,7]}/>{material(ghost?color:"#91a596")}</mesh>)}
+      <mesh position={[0,.28,.56]}><coneGeometry args={[.14,.42,6]}/>{material(ghost?color:"#91a596")}</mesh>
+    </> : null}
     {templateId==="government" ? <>{block("body",[0,.45,0],[1.35,.7,.78])}{roof("roof",.84,[1.5,.13,.9])}{[-.42,-.14,.14,.42].map((offset,index)=>block(`column-${index}`,[offset,.34,.43],[.1,.6,.1],ghost?color:"#f4f1eb"))}</> : null}
     {templateId==="evacuation" ? <>{block("hall",[0,.33,0],[1.35,.57,.9])}{roof("roof",.68,[1.48,.13,1.02])}{block("door",[0,.19,.46],[.3,.35,.035],ghost?color:"#f2f1eb")}</> : null}
     {label && <Html position={[0,2,0]} center style={{pointerEvents:"none"}}><span className="development-model-label">{label}</span></Html>}
@@ -154,7 +163,7 @@ function DevelopmentStructure({ templateId, x, z, status = "proposed", ghost = f
 function canPlaceDevelopment(x:number,z:number,layout:Layout,developments:Development[]) {
   if(Math.abs(x)>5.7 || Math.abs(z)>3.75) return false;
   if(Math.hypot(x-layout.reservoir[0],z-layout.reservoir[1])<1.7) return false;
-  return developments.every(item=>Math.hypot(x-item.position[0],z-item.position[1])>1.15);
+  return developments.filter(item=>assetTemplateById[item.templateId]?.placeable!==false).every(item=>Math.hypot(x-item.position[0],z-item.position[1])>1.15);
 }
 
 function Model({ layout, sectors, focusedSector, onSectorHover, onSelectSector, nrw, developments, placingTemplateId, hoverPoint, onPlace, selectedDevelopmentId, onSelectDevelopment, showTariffPressure, tariffImpactColors }: {
@@ -250,7 +259,7 @@ function Model({ layout, sectors, focusedSector, onSectorHover, onSelectSector, 
       {generic.map((b, i) => <Building key={i} {...b} color={palette.model} />)}
       {houses.map((h, i) => <House key={i} {...h} accent={color("Households")} highlighted={isFocused("Households")} onClick={selectSector("Households")} onHover={setSectorHover("Households")} />)}
 
-      {/* Farm plots and fish ponds represent the agriculture and fisheries channel. */}
+      {/* Separate crop beds and a fish pond make both parts of this sector visible. */}
       <group position={[layout.farm[0], 0, layout.farm[1]]}>
         <Box position={[0,.11,0]} size={[2.15,.16,1.55]} color={showTariffPressure ? tariffImpactColors.agriculture : "#b9c7a3"} highlighted={isFocused("Agriculture + fisheries")} onClick={selectSector("Agriculture + fisheries")} onHover={setSectorHover("Agriculture + fisheries")} />
         {[-.5,-.15,.2,.55].map((z) => <Box key={z} position={[0,.205,z]} size={[1.9,.035,.075]} color={showTariffPressure ? tariffImpactColors.agriculture : color("Agriculture + fisheries")} highlighted={isFocused("Agriculture + fisheries")} onClick={selectSector("Agriculture + fisheries")} onHover={setSectorHover("Agriculture + fisheries")} />)}
@@ -289,11 +298,11 @@ function Model({ layout, sectors, focusedSector, onSectorHover, onSelectSector, 
       {trees.map((t, i) => <Tree key={i} {...t} />)}
       {hoveredSector && <Html position={[0, 3.15, .3]} center style={{ pointerEvents: "none" }}>
         <div className="maquette-tooltip" style={{ "--tooltip": color(hoveredSector.name) } as CSSProperties}>
-          <strong>{hoveredSector.name}</strong><span>{sectorRoles[hoveredSector.name]}</span><b>{hoveredSector.allocation.toLocaleString("en-US", { maximumFractionDigits: 1 })} / {hoveredSector.value.toLocaleString("en-US", { maximumFractionDigits: 1 })} ML/day</b><span>{Math.round(hoveredSector.coverage * 100)}% demand covered</span>
+          <strong>{hoveredSector.name}</strong><span>{sectorRoles[hoveredSector.name]}</span><b>{hoveredSector.allocation.toLocaleString("en-US", { maximumFractionDigits: 1 })} allocated / {hoveredSector.value.toLocaleString("en-US", { maximumFractionDigits: 1 })} ML/day estimated</b><span>{Math.round(hoveredSector.coverage * 100)}% of estimated demand covered{(hoveredSector.excess || 0) > .05 ? ` · ${(hoveredSector.excess || 0).toLocaleString("en-US", { maximumFractionDigits: 1 })} above estimate` : ""}</span>
         </div>
       </Html>}
     </group>
-    {developments.map(item=><DevelopmentStructure key={item.id} templateId={item.templateId} x={item.position[0]} z={item.position[1]} status={item.status} active={item.active} selected={selectedDevelopmentId===item.id} label={selectedDevelopmentId===item.id || hoveredDevelopment===item.id?`${assetTemplateById[item.templateId].name} · ${item.active?`${calculateDevelopmentDemand(item).toFixed(2)} ML/day`:"Paused"}`:undefined} onClick={()=>onSelectDevelopment?.(item.id)} onHover={active=>setHoveredDevelopment(active?item.id:null)}/>)}
+    {developments.filter(item=>assetTemplateById[item.templateId]?.placeable!==false).map(item=><DevelopmentStructure key={item.id} templateId={item.templateId} x={item.position[0]} z={item.position[1]} status={item.status} active={item.active} selected={selectedDevelopmentId===item.id} label={selectedDevelopmentId===item.id || hoveredDevelopment===item.id?`${assetTemplateById[item.templateId].name} · ${item.active?`${assetTemplateById[item.templateId].sector===null?"Water infrastructure":`${calculateDevelopmentDemand(item).toFixed(2)} ML/day demand`}`:"Paused"}`:undefined} onClick={()=>onSelectDevelopment?.(item.id)} onHover={active=>setHoveredDevelopment(active?item.id:null)}/>)}
     {placingTemplateId && hoverPoint && <DevelopmentStructure templateId={placingTemplateId} x={hoverPoint[0]} z={hoverPoint[1]} ghost valid={canPlaceDevelopment(hoverPoint[0],hoverPoint[1],layout,developments)} onClick={()=>{if(canPlaceDevelopment(hoverPoint[0],hoverPoint[1],layout,developments))onPlace?.(hoverPoint);}}/>}
     {placingTemplateId && <mesh position={[0,-.775,0]} rotation={[-Math.PI/2,0,0]} onClick={(event)=>{event.stopPropagation();const x=event.point.x,z=event.point.z;if(canPlaceDevelopment(x,z,layout,developments))onPlace?.([x,z]);}}><planeGeometry args={[13.2,9.3]}/><meshBasicMaterial transparent opacity={0} depthWrite={false}/></mesh>}
     <ContactShadows position={[0,-1.04,0]} opacity={.32} scale={18} blur={2.8} far={6} />
