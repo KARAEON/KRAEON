@@ -52,7 +52,7 @@ export default function ChatAssistant({
       {
         role: "assistant",
         text:
-          "Ask about water supply, affordability, allocation, interventions, value per peso, or what scenario to test next.",
+          "Ask about population, watersheds, water supply, affordability, or what scenario to test next.",
       },
     ]);
 
@@ -115,14 +115,15 @@ export default function ChatAssistant({
                     Boolean(outage),
                   history:
                     previousMessages
-                      .slice(-8)
+                      .filter((message) => !message.isError)
+                      .slice(-4)
                       .map(
                         ({
                           role,
                           text,
                         }) => ({
                           role,
-                          text,
+                          text: text.slice(0, 600),
                         })
                       ),
                   psgc_code:
@@ -135,13 +136,19 @@ export default function ChatAssistant({
           );
 
         const data =
-          await response.json();
+          await response.json().catch(() => null);
 
         if (!response.ok) {
           throw new Error(
             data?.message ||
-              "DALOY AI request failed."
+              (response.status === 429
+                ? "The AI is busy right now. Please wait a moment and try again."
+                : "The AI service is temporarily unavailable. Please try again shortly.")
           );
+        }
+
+        if (!data) {
+          throw new Error("The AI did not return an answer. Please try again shortly.");
         }
 
         setMessages(
@@ -164,14 +171,15 @@ export default function ChatAssistant({
         );
         setPendingWorkflowContext(null);
       } catch (error) {
-        setPendingWorkflowContext(null);
         setMessages(
           (previous) => [
             ...previous,
             {
               role: "assistant",
-              text:
-                `Unable to contact DALOY AI: ${error.message}`,
+              isError: true,
+              text: error instanceof TypeError
+                ? "I could not reach the server. Please check your connection and try again."
+                : error.message,
             },
           ]
         );

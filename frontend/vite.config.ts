@@ -7,11 +7,7 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5180,
     strictPort: true,
-    allowedHosts: [
-      '51f4-180-190-136-78.ngrok-free.app',
-      '7f94-180-190-136-78.ngrok-free.app',
-      '48c3-180-190-136-78.ngrok-free.app',
-    ],
+    allowedHosts: ['.ngrok-free.app'],
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',

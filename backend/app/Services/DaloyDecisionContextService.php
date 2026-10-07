@@ -7,6 +7,47 @@ use App\Models\WaterEconomyProject;
 
 class DaloyDecisionContextService
 {
+    public function populationContext(string $question, ?string $selectedCode = null): array
+    {
+        $barangays = WaterEconomyBarangay::query()
+            ->get(['psgc_code', 'lgu', 'barangay', 'population_2024', 'data_status']);
+
+        $relevant = $barangays->filter(function (WaterEconomyBarangay $row) use ($question, $selectedCode): bool {
+            return $row->psgc_code === $selectedCode
+                || str_contains($question, $row->psgc_code)
+                || ($row->barangay !== '' && preg_match('/(?<!\pL)'.preg_quote($row->barangay, '/').'(?!\pL)/iu', $question) === 1);
+        })->take(5);
+        $withPopulation = $barangays->whereNotNull('population_2024');
+        $records = $relevant
+            ->concat($withPopulation->sortByDesc('population_2024')->take(5))
+            ->concat($withPopulation->sortBy('population_2024')->take(5))
+            ->unique('psgc_code')->values();
+
+        return [
+            'year' => 2024,
+            'scope' => 'Stored barangay records only; totals may cover only part of an LGU.',
+            'barangay_scope' => 'Only question matches and the five highest/lowest recorded populations are included, not every barangay.',
+            'highest_population_codes' => $withPopulation->sortByDesc('population_2024')->take(5)->pluck('psgc_code')->values()->all(),
+            'lowest_population_codes' => $withPopulation->sortBy('population_2024')->take(5)->pluck('psgc_code')->values()->all(),
+            'lgu_totals' => $barangays->groupBy('lgu')->map(function ($rows, $lgu): array {
+                return [
+                    'lgu' => $lgu,
+                    'recorded_population' => $rows->whereNotNull('population_2024')->isEmpty()
+                        ? null : $rows->sum('population_2024'),
+                    'barangay_count' => $rows->count(),
+                    'population_record_count' => $rows->whereNotNull('population_2024')->count(),
+                ];
+            })->values()->all(),
+            'barangays' => $records->map(fn (WaterEconomyBarangay $row): array => [
+                'psgc_code' => $row->psgc_code,
+                'lgu' => $row->lgu,
+                'barangay' => $row->barangay,
+                'population_2024' => $row->population_2024,
+                'data_status' => data_get($row->data_status, 'population_2024', 'Unspecified'),
+            ])->all(),
+        ];
+    }
+
     public function build(
         WaterEconomyBarangay $barangay,
         WaterEconomyCalculator $calculator,
@@ -32,119 +73,101 @@ class DaloyDecisionContextService
 
         return [
             'location' => [
-                'psgc_code' =>
-                    $barangay->psgc_code,
+                'psgc_code' => $barangay->psgc_code,
 
-                'barangay' =>
-                    $barangay->barangay,
+                'barangay' => $barangay->barangay,
 
-                'lgu' =>
-                    $barangay->lgu,
+                'lgu' => $barangay->lgu,
             ],
 
+            'population' => data_get($state, 'population', []),
+
             'water' => [
-                'usable_water_m3_day' =>
-                    data_get(
-                        $state,
-                        'water.usable_water_m3_day'
-                    ),
+                'usable_water_m3_day' => data_get(
+                    $state,
+                    'water.usable_water_m3_day'
+                ),
 
-                'total_demand_m3_day' =>
-                    data_get(
-                        $state,
-                        'water.total_demand_m3_day'
-                    ),
+                'total_demand_m3_day' => data_get(
+                    $state,
+                    'water.total_demand_m3_day'
+                ),
 
-                'deficit_m3_day' =>
-                    data_get(
-                        $state,
-                        'water.deficit_m3_day'
-                    ),
+                'deficit_m3_day' => data_get(
+                    $state,
+                    'water.deficit_m3_day'
+                ),
 
-                'surplus_m3_day' =>
-                    data_get(
-                        $state,
-                        'water.surplus_m3_day'
-                    ),
+                'surplus_m3_day' => data_get(
+                    $state,
+                    'water.surplus_m3_day'
+                ),
 
-                'nrw_rate_pct' =>
-                    data_get(
-                        $state,
-                        'water.nrw_rate_pct'
-                    ),
+                'nrw_rate_pct' => data_get(
+                    $state,
+                    'water.nrw_rate_pct'
+                ),
 
-                'source_pressure_pct' =>
-                    data_get(
-                        $state,
-                        'water.source_pressure_pct'
-                    ),
+                'source_pressure_pct' => data_get(
+                    $state,
+                    'water.source_pressure_pct'
+                ),
             ],
 
             'affordability' => [
-                'class' =>
-                    data_get(
-                        $state,
-                        'affordability.affordability_class'
-                    ),
+                'class' => data_get(
+                    $state,
+                    'affordability.affordability_class'
+                ),
 
-                'low_income_class' =>
-                    data_get(
-                        $state,
-                        'affordability.low_income_affordability_class'
-                    ),
+                'low_income_class' => data_get(
+                    $state,
+                    'affordability.low_income_affordability_class'
+                ),
 
-                'proposed_water_burden_pct' =>
-                    data_get(
-                        $state,
-                        'affordability.proposed_water_burden_pct'
-                    ),
+                'proposed_water_burden_pct' => data_get(
+                    $state,
+                    'affordability.proposed_water_burden_pct'
+                ),
             ],
 
-            'demand_response' =>
-                data_get(
-                    $state,
-                    'demand_response'
-                ),
+            'demand_response' => data_get(
+                $state,
+                'demand_response'
+            ),
 
-            'sector_satisfaction_pct' =>
-                data_get(
-                    $state,
-                    'sector_satisfaction_pct',
-                    []
-                ),
+            'sector_satisfaction_pct' => data_get(
+                $state,
+                'sector_satisfaction_pct',
+                []
+            ),
 
-            'alerts' =>
-                data_get(
-                    $state,
-                    'alerts',
-                    []
-                ),
+            'alerts' => data_get(
+                $state,
+                'alerts',
+                []
+            ),
 
             'investment' => [
-                'policy_weights' =>
-                    $benefit['weights'],
+                'policy_weights' => $benefit['weights'],
 
-                'weight_label' =>
-                    $benefit['weight_label'],
+                'weight_label' => $benefit['weight_label'],
 
-                'ranking' =>
-                    array_slice(
-                        $benefit['ranking'],
-                        0,
-                        5
-                    ),
+                'ranking' => array_slice(
+                    $benefit['ranking'],
+                    0,
+                    5
+                ),
             ],
 
-            'data_status' =>
-                data_get(
-                    $state,
-                    'data_status',
-                    []
-                ),
+            'data_status' => data_get(
+                $state,
+                'data_status',
+                []
+            ),
 
             'rules' => [
-                'calculations_happen_before_ai' =>
-                    true,
+                'calculations_happen_before_ai' => true,
 
                 'ai_jobs' => [
                     'EXPLAIN',

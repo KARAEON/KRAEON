@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\WaterEconomyBarangay;
+use App\Models\WaterEconomyProject;
 use App\Services\DaloyDecisionContextService;
 use App\Services\InterventionValuationService;
 use App\Services\PublicBenefitPerPesoService;
@@ -28,11 +29,9 @@ class DaloyDecisionController extends Controller
 
             'history' => 'sometimes|array|max:8',
 
-            'history.*.role' =>
-                'required_with:history|string|in:user,assistant',
+            'history.*.role' => 'required_with:history|string|in:user,assistant',
 
-            'history.*.text' =>
-                'required_with:history|string|max:1500',
+            'history.*.text' => 'required_with:history|string|max:1500',
             'workflow_context' => 'nullable|array',
             'workflow_context.changes' => 'required_with:workflow_context|array|min:1',
             'workflow_context.changes.nrw_rate_pct' => 'sometimes|numeric|min:0|max:100',
@@ -52,6 +51,16 @@ class DaloyDecisionController extends Controller
             'workflow_context.projects.*.implementation_time_months' => 'required|integer|min:1|max:600',
         ]);
 
+        $conversationReply = $this->conversationReply($validated['message']);
+        if ($conversationReply !== null && empty($validated['workflow_context'])) {
+            return response()->json([
+                'reply' => $conversationReply,
+                'recommendation' => null,
+                'suggested_scenario' => null,
+                'context_type' => empty($validated['psgc_code']) ? 'general' : 'barangay',
+            ]);
+        }
+
         /*
         |--------------------------------------------------------------------------
         | SELECTED BARANGAY CONTEXT
@@ -60,11 +69,21 @@ class DaloyDecisionController extends Controller
 
         $selectedContext = null;
 
-        if (!empty($validated['psgc_code'])) {
+        if (! empty($validated['psgc_code'])) {
             $barangay = WaterEconomyBarangay::where(
                 'psgc_code',
                 $validated['psgc_code']
-            )->firstOrFail();
+            )->first();
+
+            if ($barangay === null) {
+                return response()->json([
+                    'reply' => 'I do not have a record for that barangay in the available project data. Try another barangay or ask a general question about water or watersheds.',
+                    'answer_status' => 'missing_data',
+                    'recommendation' => null,
+                    'suggested_scenario' => null,
+                    'context_type' => 'general',
+                ]);
+            }
 
             $selectedContext = $contextService->build(
                 $barangay,
@@ -75,7 +94,7 @@ class DaloyDecisionController extends Controller
         }
 
         $workflowResults = null;
-        if (!empty($validated['workflow_context']) && !empty($validated['psgc_code'])) {
+        if (! empty($validated['workflow_context']) && ! empty($validated['psgc_code'])) {
             $barangay ??= WaterEconomyBarangay::where('psgc_code', $validated['psgc_code'])->firstOrFail();
             $draft = $barangay->replicate();
             $draft->exists = true;
@@ -92,9 +111,9 @@ class DaloyDecisionController extends Controller
                 ],
             ];
             if (array_key_exists('projects', $validated['workflow_context'])) {
-                $savedProjects = \App\Models\WaterEconomyProject::where('psgc_code', $validated['psgc_code'])->get();
+                $savedProjects = WaterEconomyProject::where('psgc_code', $validated['psgc_code'])->get();
                 $draftProjects = collect($validated['workflow_context']['projects'] ?? [])->map(
-                    fn (array $project) => new \App\Models\WaterEconomyProject([...$project, 'psgc_code' => $validated['psgc_code']])
+                    fn (array $project) => new WaterEconomyProject([...$project, 'psgc_code' => $validated['psgc_code']])
                 );
                 $workflowResults['intervention_ranking'] = $benefitService->rank(
                     $savedProjects->concat($draftProjects), $valuationService
@@ -113,7 +132,7 @@ class DaloyDecisionController extends Controller
 
         $generalContext = null;
 
-        if (!$selectedContext) {
+        if (! $selectedContext) {
             $rows = WaterEconomyBarangay::query()->get();
 
             $states = [];
@@ -123,50 +142,41 @@ class DaloyDecisionController extends Controller
                     $state = $calculator->calculate($row);
 
                     $states[] = [
-                        'psgc_code' =>
-                            $row->psgc_code,
+                        'psgc_code' => $row->psgc_code,
 
-                        'lgu' =>
-                            $row->lgu,
+                        'lgu' => $row->lgu,
 
-                        'barangay' =>
-                            $row->barangay,
+                        'barangay' => $row->barangay,
 
-                        'usable_water_m3_day' =>
-                            data_get(
-                                $state,
-                                'water.usable_water_m3_day'
-                            ),
+                        'usable_water_m3_day' => data_get(
+                            $state,
+                            'water.usable_water_m3_day'
+                        ),
 
-                        'total_demand_m3_day' =>
-                            data_get(
-                                $state,
-                                'water.total_demand_m3_day'
-                            ),
+                        'total_demand_m3_day' => data_get(
+                            $state,
+                            'water.total_demand_m3_day'
+                        ),
 
-                        'deficit_m3_day' =>
-                            data_get(
-                                $state,
-                                'water.deficit_m3_day'
-                            ),
+                        'deficit_m3_day' => data_get(
+                            $state,
+                            'water.deficit_m3_day'
+                        ),
 
-                        'source_pressure_pct' =>
-                            data_get(
-                                $state,
-                                'water.source_pressure_pct'
-                            ),
+                        'source_pressure_pct' => data_get(
+                            $state,
+                            'water.source_pressure_pct'
+                        ),
 
-                        'nrw_rate_pct' =>
-                            data_get(
-                                $state,
-                                'water.nrw_rate_pct'
-                            ),
+                        'nrw_rate_pct' => data_get(
+                            $state,
+                            'water.nrw_rate_pct'
+                        ),
 
-                        'affordability_class' =>
-                            data_get(
-                                $state,
-                                'affordability.affordability_class'
-                            ),
+                        'affordability_class' => data_get(
+                            $state,
+                            'affordability.affordability_class'
+                        ),
                     ];
                 } catch (\Throwable $error) {
                     /*
@@ -178,43 +188,37 @@ class DaloyDecisionController extends Controller
             }
 
             $generalContext = [
-                'pilot_area_barangay_count' =>
-                    count($states),
+                'pilot_area_barangay_count' => count($states),
 
-                'lowest_usable_supply' =>
-                    $this->rankBy(
-                        $states,
-                        'usable_water_m3_day',
-                        true
-                    ),
+                'lowest_usable_supply' => $this->rankBy(
+                    $states,
+                    'usable_water_m3_day',
+                    true
+                ),
 
-                'highest_deficit' =>
-                    $this->rankBy(
-                        $states,
-                        'deficit_m3_day',
-                        false
-                    ),
+                'highest_deficit' => $this->rankBy(
+                    $states,
+                    'deficit_m3_day',
+                    false
+                ),
 
-                'highest_source_pressure' =>
-                    $this->rankBy(
-                        $states,
-                        'source_pressure_pct',
-                        false
-                    ),
+                'highest_source_pressure' => $this->rankBy(
+                    $states,
+                    'source_pressure_pct',
+                    false
+                ),
 
-                'highest_nrw' =>
-                    $this->rankBy(
-                        $states,
-                        'nrw_rate_pct',
-                        false
-                    ),
+                'highest_nrw' => $this->rankBy(
+                    $states,
+                    'nrw_rate_pct',
+                    false
+                ),
 
-                'highest_total_demand' =>
-                    $this->rankBy(
-                        $states,
-                        'total_demand_m3_day',
-                        false
-                    ),
+                'highest_total_demand' => $this->rankBy(
+                    $states,
+                    'total_demand_m3_day',
+                    false
+                ),
             ];
         }
 
@@ -250,8 +254,24 @@ NON-NEGOTIABLE RULES:
 - benefit scores
 - alerts
 - monetary values
+- population counts and census years
+- local watershed names, boundaries, areas, condition, and water-source connections
 
 3. Use the supplied structured context.
+
+POPULATION AND WATERSHEDS:
+Use population_context for 2024 population questions about named barangays or LGUs,
+even when another barangay is selected. Use selected_context.population for the selected barangay.
+LGU recorded_population totals cover stored records only; do not call them complete official
+LGU census totals. Preserve missing values as unavailable, not zero. Household estimates
+are not population counts. Respect the supplied population data status.
+You may explain general watershed concepts, runoff, recharge, erosion, water quality,
+and how population growth can affect water demand and watershed management.
+Clearly separate general explanations and possible risks from measured local conditions.
+When watershed_context says local records are unavailable, say that the project has no
+verified local watershed data for questions about names, boundaries, areas, condition,
+or which watershed supplies a barangay. Do not infer a watershed from an LGU name,
+source capacity, the map, or a simulated reservoir. Still answer conceptual questions directly.
 
 4. Never claim that a suggested scenario has already been applied.
 
@@ -262,6 +282,25 @@ NON-NEGOTIABLE RULES:
 - Warn
 
 Do not display those four job names as interface categories unless naturally needed in the answer.
+
+CONVERSATION:
+For unclear messages, ask one brief clarifying question and offer a relevant example.
+If the available data cannot answer a question, state what is missing and what you can answer.
+Do not invent facts or describe a missing answer as a connection failure.
+Keep greetings and acknowledgements natural and brief.
+
+MISSING DATA (applies to every topic, not just population or watersheds):
+For a specific local fact, date, statistic, person, facility, or dataset field that the context
+does not contain, return answer_status: "missing_data" and a normal conversational message.
+Say "I don't have [the requested information] in the available project data" and offer a
+related question you can answer. Do not fabricate a value, substitute a different statistic,
+or suggest changing water inputs to obtain unrelated missing facts.
+For a question outside DALOY's population and water decision-support scope, return
+answer_status: "out_of_scope", briefly explain what you can help with, and ask a relevant question.
+For general educational water or watershed questions, you can use general knowledge;
+they do not require a database entry. Use answer_status: "answered".
+For an ambiguous question, use answer_status: "clarification" and ask what the user means.
+Missing data and out-of-scope questions are successful chat replies, not technical errors.
 
 GENERAL CONTEXT RULE:
 If no barangay is selected, use GENERAL CONTEXT to answer questions about the pilot area.
@@ -286,9 +325,12 @@ Next test
 
 Keep it compact.
 
-Return JSON whenever possible using:
+Return one JSON object using the fields below. Always put the direct answer in "message",
+including factual population questions. For factual or conceptual questions, use empty
+recommendation fields and suggested_scenario: null. Never return the context itself as the answer.
 
 {
+  "answer_status": "answered | missing_data | out_of_scope | clarification",
   "suggested_option": "short option, result, or finding",
   "why": [
     "reason 1",
@@ -365,43 +407,47 @@ PROMPT;
             ],
         ];
 
-        foreach ($validated['history'] ?? [] as $history) {
+        foreach (array_slice($validated['history'] ?? [], -4) as $history) {
             $messages[] = [
-                'role' =>
-                    $history['role'],
+                'role' => $history['role'],
 
-                'content' =>
-                    $history['text'],
+                'content' => mb_substr($history['text'], 0, 600),
             ];
         }
 
         $structuredContext = [
-            'outage_simulation_active' =>
-                (bool) (
-                    $validated['outage']
-                    ?? false
-                ),
+            'outage_simulation_active' => (bool) (
+                $validated['outage']
+                ?? false
+            ),
 
-            'selected_context' =>
-                $selectedContext,
+            'selected_context' => $selectedContext,
 
-            'general_context' =>
-                $generalContext,
+            'general_context' => $generalContext,
 
             'workflow_results' => $workflowResults,
+
+            'population_context' => $contextService->populationContext(
+                implode(' ', array_column(array_slice($validated['history'] ?? [], -2), 'text')).' '.$validated['message'],
+                $validated['psgc_code'] ?? null
+            ),
+
+            'watershed_context' => [
+                'local_records_available' => false,
+                'data_status' => 'No verified local watershed inventory, boundaries, or source connections are stored in this project.',
+            ],
         ];
 
         $messages[] = [
             'role' => 'user',
 
-            'content' =>
-                "STRUCTURED CONTEXT:\n" .
+            'content' => "STRUCTURED CONTEXT:\n".
                 json_encode(
                     $structuredContext,
                     JSON_UNESCAPED_UNICODE |
                     JSON_UNESCAPED_SLASHES
-                ) .
-                "\n\nUSER QUESTION:\n" .
+                ).
+                "\n\nUSER QUESTION:\n".
                 $validated['message'],
         ];
 
@@ -423,27 +469,22 @@ PROMPT;
                 ->post(
                     'https://api.groq.com/openai/v1/chat/completions',
                     [
-                        'model' =>
-                            'openai/gpt-oss-20b',
+                        'model' => 'openai/gpt-oss-20b',
 
-                        'messages' =>
-                            $messages,
+                        'messages' => $messages,
 
-                        'temperature' =>
-                            0.05,
+                        'temperature' => 0.05,
 
-                        'max_completion_tokens' =>
-                            1000,
+                        'max_completion_tokens' => 1000,
+                        'reasoning_effort' => 'low',
+                        'include_reasoning' => false,
+                        'response_format' => ['type' => 'json_object'],
                     ]
                 );
         } catch (\Throwable $error) {
             return response()->json([
-                'message' =>
-                    'Unable to connect to DALOY AI.',
-
-                'details' =>
-                    $error->getMessage(),
-            ], 500);
+                'message' => 'The AI service is temporarily unavailable. Please try again shortly.',
+            ], 503);
         }
 
         /*
@@ -454,15 +495,12 @@ PROMPT;
 
         if ($response->failed()) {
             return response()->json([
-                'message' =>
-                    'DALOY AI request failed.',
-
-                'status' =>
-                    $response->status(),
-
-                'details' =>
-                    $response->json()
-                    ?? $response->body(),
+                'message' => match ($response->status()) {
+                    429 => 'The AI is busy right now. Please wait a moment and try again.',
+                    413 => 'This request is too long for the AI. Please try a shorter question.',
+                    default => 'The AI service is temporarily unavailable. Please try again shortly.',
+                },
+                'status' => $response->status(),
             ], $response->status());
         }
 
@@ -480,8 +518,7 @@ PROMPT;
 
         if ($content === '') {
             return response()->json([
-                'message' =>
-                    'DALOY AI returned an empty response.',
+                'message' => 'The AI did not return an answer. Please try again or rephrase your question.',
             ], 502);
         }
 
@@ -505,26 +542,45 @@ PROMPT;
         |
         */
 
-        if (!is_array($decoded)) {
-    return response()->json([
-        'reply' =>
-            $this->extractReadableReply($content),
+        if (! is_array($decoded)) {
+            return response()->json([
+                'reply' => $this->extractReadableReply($content),
 
-        'recommendation' => [
-            'suggested_option' => null,
-            'why' => [],
-            'tradeoff' => null,
-            'next_test' => null,
-        ],
+                'recommendation' => [
+                    'suggested_option' => null,
+                    'why' => [],
+                    'tradeoff' => null,
+                    'next_test' => null,
+                ],
 
-        'suggested_scenario' => null,
+                'suggested_scenario' => null,
 
-        'context_type' =>
-            $selectedContext
-                ? 'barangay'
-                : 'general',
-    ]);
-}
+                'context_type' => $selectedContext
+                        ? 'barangay'
+                        : 'general',
+            ]);
+        }
+
+        $answerStatus = $decoded['answer_status'] ?? 'answered';
+        if (in_array($answerStatus, ['missing_data', 'out_of_scope', 'clarification'], true)) {
+            $message = $decoded['message'] ?? null;
+            $reply = is_string($message) ? trim($message) : '';
+            if ($reply === '') {
+                $reply = match ($answerStatus) {
+                    'missing_data' => 'I do not have that information in the available project data. I can help with recorded population, water supply, or general watershed questions.',
+                    'out_of_scope' => 'I can help with population and water-related questions. What would you like to know about those topics?',
+                    default => 'Could you clarify your question? You can include the barangay or LGU name and what you want to know.',
+                };
+            }
+
+            return response()->json([
+                'reply' => $reply,
+                'answer_status' => $answerStatus,
+                'recommendation' => null,
+                'suggested_scenario' => null,
+                'context_type' => $selectedContext ? 'barangay' : 'general',
+            ]);
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -560,19 +616,16 @@ PROMPT;
         }
 
         return response()->json([
-            'reply' =>
-                $reply,
+            'reply' => $reply,
 
             'recommendation' => [
-                'suggested_option' =>
-                    $decoded['suggested_option']
+                'suggested_option' => $decoded['suggested_option']
                     ?? null,
 
-                'why' =>
-                    is_array(
-                        $decoded['why']
-                        ?? null
-                    )
+                'why' => is_array(
+                    $decoded['why']
+                    ?? null
+                )
                         ? array_slice(
                             $decoded['why'],
                             0,
@@ -580,20 +633,16 @@ PROMPT;
                         )
                         : [],
 
-                'tradeoff' =>
-                    $decoded['tradeoff']
+                'tradeoff' => $decoded['tradeoff']
                     ?? null,
 
-                'next_test' =>
-                    $decoded['next_test']
+                'next_test' => $decoded['next_test']
                     ?? null,
             ],
 
-            'suggested_scenario' =>
-                $suggestion,
+            'suggested_scenario' => $suggestion,
 
-            'context_type' =>
-                $selectedContext
+            'context_type' => $selectedContext
                     ? 'barangay'
                     : 'general',
         ]);
@@ -604,6 +653,19 @@ PROMPT;
     | GENERAL CONTEXT RANKING
     |--------------------------------------------------------------------------
     */
+
+    private function conversationReply(string $message): ?string
+    {
+        $normalized = preg_replace('/[.!?,]+$/u', '', mb_strtolower(trim($message)));
+
+        return match ($normalized) {
+            'k', 'ok', 'okay', 'okk', 'kk', 'alright' => 'Okay! Ask me about population, water supply, or watersheds whenever you are ready.',
+            'hehe', 'hehehe', 'haha', 'hahaha', 'lol' => 'What would you like to know? You can ask about population, water supply, or watersheds.',
+            'hi', 'hello', 'hey' => 'Hi! How can I help with population, water supply, or watersheds?',
+            'thanks', 'thank you', 'ty' => 'You are welcome! Let me know if you have another question.',
+            default => null,
+        };
+    }
 
     private function rankBy(
         array $items,
@@ -746,7 +808,7 @@ PROMPT;
     private function sanitizeSuggestion(
         mixed $suggestion
     ): ?array {
-        if (!is_array($suggestion)) {
+        if (! is_array($suggestion)) {
             return null;
         }
 
@@ -770,8 +832,7 @@ PROMPT;
         $changes = [];
 
         foreach (
-            ($suggestion['changes'] ?? [])
-            as $key => $value
+            ($suggestion['changes'] ?? []) as $key => $value
         ) {
             if (
                 in_array(
@@ -804,11 +865,9 @@ PROMPT;
         }
 
         return [
-            'label' =>
-                $label,
+            'label' => $label,
 
-            'changes' =>
-                $changes,
+            'changes' => $changes,
         ];
     }
 
@@ -823,22 +882,22 @@ PROMPT;
     ): string {
         $parts = [];
 
-        if (!empty(
+        if (! empty(
             $decoded['suggested_option']
         )) {
             $parts[] =
-                'Suggested option: ' .
+                'Suggested option: '.
                 $decoded['suggested_option'];
         }
 
         if (
-            !empty($decoded['why']) &&
+            ! empty($decoded['why']) &&
             is_array(
                 $decoded['why']
             )
         ) {
             $parts[] =
-                'Why: ' .
+                'Why: '.
                 implode(
                     '; ',
                     array_slice(
@@ -849,24 +908,24 @@ PROMPT;
                 );
         }
 
-        if (!empty(
+        if (! empty(
             $decoded['tradeoff']
         )) {
             $parts[] =
-                'Trade-off: ' .
+                'Trade-off: '.
                 $decoded['tradeoff'];
         }
 
-        if (!empty(
+        if (! empty(
             $decoded['next_test']
         )) {
             $parts[] =
-                'Next test: ' .
+                'Next test: '.
                 $decoded['next_test'];
         }
 
         if (count($parts) === 0) {
-            return 'DALOY AI analyzed the available calculated context, but no concise recommendation was returned.';
+            return 'I could not find a clear answer. Could you rephrase your question or include the barangay or LGU name?';
         }
 
         return implode(
@@ -874,76 +933,77 @@ PROMPT;
             $parts
         );
     }
-    private function extractReadableReply(
-    string $content
-): string {
-    $content = trim($content);
 
-    /*
-     * Try to extract a JSON "message" field
-     * even when the full JSON was malformed/truncated.
-     */
-    if (
-        preg_match(
-            '/"message"\s*:\s*"((?:\\\\.|[^"\\\\])*)"/s',
-            $content,
-            $matches
-        )
-    ) {
-        $message =
-            stripcslashes(
-                $matches[1]
+    private function extractReadableReply(
+        string $content
+    ): string {
+        $content = trim($content);
+
+        /*
+         * Try to extract a JSON "message" field
+         * even when the full JSON was malformed/truncated.
+         */
+        if (
+            preg_match(
+                '/"message"\s*:\s*"((?:\\\\.|[^"\\\\])*)"/s',
+                $content,
+                $matches
+            )
+        ) {
+            $message =
+                stripcslashes(
+                    $matches[1]
+                );
+
+            return trim($message);
+        }
+
+        /*
+         * Remove JSON/code-fence noise.
+         */
+        $cleaned =
+            preg_replace(
+                '/```(?:json)?|```/i',
+                '',
+                $content
             );
 
-        return trim($message);
-    }
+        $cleaned =
+            preg_replace(
+                '/^\s*[\{\[]+/',
+                '',
+                $cleaned
+            );
 
-    /*
-     * Remove JSON/code-fence noise.
-     */
-    $cleaned =
-        preg_replace(
-            '/```(?:json)?|```/i',
-            '',
-            $content
-        );
+        $cleaned =
+            preg_replace(
+                '/[\}\]]+\s*$/',
+                '',
+                $cleaned
+            );
 
-    $cleaned =
-        preg_replace(
-            '/^\s*[\{\[]+/',
-            '',
-            $cleaned
-        );
+        $cleaned =
+            preg_replace(
+                '/"(suggested_option|why|tradeoff|next_test|suggested_scenario)"\s*:.*/s',
+                '',
+                $cleaned
+            );
 
-    $cleaned =
-        preg_replace(
-            '/[\}\]]+\s*$/',
-            '',
-            $cleaned
-        );
+        $cleaned =
+            preg_replace(
+                '/^"?message"?\s*:\s*"?/i',
+                '',
+                trim($cleaned)
+            );
 
-    $cleaned =
-        preg_replace(
-            '/"(suggested_option|why|tradeoff|next_test|suggested_scenario)"\s*:.*/s',
-            '',
-            $cleaned
-        );
+        $cleaned =
+            trim(
+                $cleaned,
+                " \n\r\t,\""
+            );
 
-    $cleaned =
-        preg_replace(
-            '/^"?message"?\s*:\s*"?/i',
-            '',
-            trim($cleaned)
-        );
-
-    $cleaned =
-        trim(
-            $cleaned,
-            " \n\r\t,\""
-        );
-
-    return $cleaned !== ''
-        ? $cleaned
-        : 'DALOY AI analyzed the available information but could not format the response correctly.';
+        return $cleaned !== ''
+            ? $cleaned
+            : 'DALOY AI analyzed the available information but could not format the response correctly.';
     }
 }
