@@ -57,7 +57,7 @@ import { FlowDiagram, SamarMap, SectionHeading } from "./Visuals";
 import Reservoir from "./Reservoir";
 import CityMaquette from "./CityMaquette";
 import DevelopmentPlanner from "./DevelopmentPlanner";
-import { type Development } from "./engine/developments";
+import { calculateRecoveredWaterTariffValue, type Development } from "./engine/developments";
 import daloyIcon from "./assets/DALOY-ICON.png";
 import { readSavedScenarios, persistSavedScenarios } from "./engine/scenarios";
 const pilots = municipalities.filter((m) => m.activeInSimulation);
@@ -247,15 +247,13 @@ export default function App() {
   const spatialInput = scenario.inputs[spatialMunicipality.id];
   const nrwBaseline = baselineScenario.inputs[spatialMunicipality.id].nrw;
   const spatialAtBaselineNrw = simulateMunicipality(spatialMunicipality, {...spatialInput, nrw: nrwBaseline}, spatialDevelopments, scenario.priorityOrder);
-  const grossForNiw = spatialResult.supply + spatialMunicipality.opening;
-  const baselineSourceLoss = grossForNiw * nrwBaseline / 100;
-  const scenarioSourceLoss = grossForNiw * spatialInput.nrw / 100;
+  const baselineSourceLoss = spatialAtBaselineNrw.nrwVolume;
+  const scenarioSourceLoss = spatialStorage.nrwVolume;
   const sourceLossRecovered = baselineSourceLoss - scenarioSourceLoss;
   const nrwAllocableGain = spatialResult.allocable - spatialAtBaselineNrw.allocable;
-  const nrwAllocationGain = spatialResult.allocation - spatialAtBaselineNrw.allocation;
-  const nrwPercentagePointChange = nrwBaseline - spatialInput.nrw;
-  const nrwValueEstimate = Math.max(0, nrwAllocationGain) * 1000 * spatialInput.price;
-  const spatialStorageUsed = spatialResult.results.reduce((total, item) => total + Math.max(0, item.allocation / (1 - item.nrw) - item.supply), 0);
+  const nrwPercentagePointChange = (spatialAtBaselineNrw.nrw - spatialStorage.nrw) * 100;
+  const nrwValueEstimate = calculateRecoveredWaterTariffValue(baselineSourceLoss, scenarioSourceLoss, spatialInput.price);
+  const spatialStorageUsed = spatialResult.results.reduce((total, item) => total + Math.max(0, item.allocation + item.nrwVolume - item.supply), 0);
   const spatialCoverage = spatialResult.demand > 0 ? Math.min(1, spatialResult.allocation / spatialResult.demand) : 0;
   const waterStress = spatialResult.shortage <= .05 ? "Low" : spatialResult.shortage / Math.max(.1, spatialResult.demand) >= .2 ? "High" : "Moderate";
   const affordability = spatialResult.burden <= 3 ? "Low" : spatialResult.burden <= 5 ? "Moderate" : "High";
@@ -764,8 +762,8 @@ export default function App() {
                       <div className="control-section">
                         <div className="mini-heading"><Droplets size={16}/><h3>Distribution losses &amp; reserve</h3></div>
                         <Slider label="Non-revenue water (demo assumption)" value={p.nrw} max={80} unit="%" onChange={(v) => update({nrw:v})}/>
-                        <Slider label="Protected storage reserve" value={p.reserve} max={90} unit="% of capacity" onChange={(v) => update({reserve:v})}/>
-                        <p className="help-text">Losses reduce water delivered. Protected reserve stays in storage before water is allocated. Both start as illustrative 28% / 22% assumptions.</p>
+                        <Slider label="Protected supply reserve" value={p.reserve} max={90} unit="% of gross supply" onChange={(v) => update({reserve:v})}/>
+                        <p className="help-text">GIS calculates losses and protected reserve separately as percentages of gross source supply. Opening storage adds to the available pool. Both start as illustrative 28% / 22% assumptions.</p>
                       </div>
                     </>
                   )}
@@ -823,7 +821,7 @@ export default function App() {
                         <div><span>Total requested</span><strong>{number(sum(result.allocationRequests))} <small>ML/day</small></strong></div>
                         <div><span>Water allocated</span><strong>{number(result.allocation)} <small>ML/day</small></strong></div>
                         <div><span>Available water</span><strong>{number(result.allocable)} <small>ML/day</small></strong></div>
-                        <div><span>Storage used today</span><strong>{number(Math.max(0, result.results.reduce((total, item) => total + item.allocation / (1 - item.nrw) - item.supply, 0)))} <small>ML</small></strong></div>
+                        <div><span>Storage used today</span><strong>{number(result.results.reduce((total, item) => total + Math.max(0, item.allocation + item.nrwVolume - item.supply), 0))} <small>ML</small></strong></div>
                         <div><span>Estimated demand unmet</span><strong>{number(result.shortage)} <small>ML/day</small></strong></div>
                         {result.excess > .05 && <div><span>Allocation above estimate</span><strong>{number(result.excess)} <small>ML/day</small></strong></div>}
                       </div>
@@ -1254,9 +1252,9 @@ export default function App() {
                 <div className="nrw-outcomes">
                   <div><strong>{nrwAllocableGain >= 0 ? "+" : "−"}{number(Math.abs(nrwAllocableGain))} ML/day</strong><span>Change in allocable water</span></div>
                   <div><strong>{nrwPercentagePointChange >= 0 ? "−" : "+"}{number(Math.abs(nrwPercentagePointChange))} pp</strong><span>NRW change from demo baseline</span></div>
-                  <div><strong>{spatialInput.price > 0 ? `₱${number(nrwValueEstimate)}/day` : "Not estimated"}</strong><span>Potential value of added deliveries · ESTIMATED</span></div>
+                  <div><strong>{nrwValueEstimate !== null ? `₱${number(nrwValueEstimate)}/day` : "Not estimated"}</strong><span>Potential value of recovered water · ESTIMATED</span></div>
                 </div>
-                <p className="nrw-method-note">Source loss uses simulated inflow plus opening storage × NRW. Allocable water uses the live reservoir, protected reserve, and loss model. Potential value uses only the additional simulated allocation at the current illustrative water value of {money(spatialInput.price)}/m³; it is not a revenue forecast.</p>
+                <p className="nrw-method-note">GIS source loss = gross inflow × NRW. Reserve = gross inflow × reserve rate. Allocable water = max(0, opening storage + inflow − losses − reserve). Potential value uses recovered water at the current illustrative water value of {money(spatialInput.price)}/m³; it is not a revenue forecast.</p>
               </div>}
             </section>}
             {exploreLayout === "map-expanded" && <section className={`water-balance-panel ${waterBalanceOpen ? "expanded" : ""}`} aria-labelledby="water-balance-title">
@@ -1577,11 +1575,11 @@ export default function App() {
                 ],
                 [
                   "Supply and storage",
-                  "Gross inflow is the sum of source outputs after the output multiplier and drought reduction, plus any supplementary supply. The demonstration assumptions are 28% non-revenue water (NRW) and a protected reserve equal to 22% of reservoir capacity; both are editable in Sources. Allocable water = max(0, opening storage + inflow − protected reserve volume) × (1 − NRW). Total allocation served cannot exceed this shared municipal pool. Closing storage subtracts the physical withdrawal needed for delivered allocations (allocation ÷ (1 − NRW)) from opening storage + inflow, then applies reservoir capacity; excess is spill. Water not allocated remains in storage. This is a one-day illustrative balance, not an operational forecast.",
+                  "Gross inflow is the sum of source outputs after the output multiplier and drought reduction, plus any supplementary supply. The demonstration assumptions are 28% non-revenue water (NRW) and a protected reserve equal to 22% of gross inflow; both are editable in Sources. GIS calculates NRW volume = inflow × NRW and reserve volume = inflow × reserve rate. Allocable water = max(0, opening storage + inflow − NRW volume − reserve volume). Total allocation served cannot exceed this shared municipal pool. Closing storage subtracts NRW volume and delivered allocations from opening storage + inflow, then applies reservoir capacity; excess is spill. Water not allocated remains in storage. This is a one-day illustrative balance, not an operational forecast.",
                 ],
                 [
                   "Estimated demand and sector allocations",
-                  "Sector demand values are fixed illustrative municipal estimates used as a reference, not sliders in the simulation. Each sector has one allocation request in ML/day. The scenario's priority order serves requests first; all sectors draw from the same municipality pool, and delivered allocations are capped by water available after NRW and the protected reserve. Requests may exceed estimated demand, but total delivered water still cannot exceed the pool. Unmet estimated demand is calculated per sector; one sector's extra allocation does not cancel another sector's shortfall. Supply gap excludes storage and equals max(total estimated demand − source inflow, 0).",
+                  "Sector demand values are fixed illustrative municipal estimates used as a reference, not sliders in the simulation. Each sector has one allocation request in ML/day. The scenario's priority order serves requests first; all sectors draw from the same municipality pool, and delivered allocations are capped by water available after NRW and the protected reserve. Requests may exceed estimated demand, but total delivered water still cannot exceed the pool. Unmet estimated demand is calculated per sector; one sector's extra allocation does not cancel another sector's shortfall. Supply gap follows GIS: max(total estimated demand − usable source inflow after NRW and reserve, 0), excluding storage.",
                 ],
                 [
                   "Essential-needs protection",
@@ -1659,7 +1657,7 @@ export default function App() {
               <button className="daloy-action" onClick={() => {setView("Reservoir");setExploreLayout("planning-expanded");setNrwSimulatorOpen(true);setDaloyOpen(false);window.setTimeout(() => document.getElementById("spatial-section")?.scrollIntoView({behavior:"smooth",block:"start"}), 0);}}>Inspect NRW and the leak in 3D <ArrowRight size={14}/></button>
             </>}
             {daloyQuestion === daloyQuestions[1] && (unmetSectors.length ? <><strong>{unmetSectors.length} {unmetSectors.length === 1 ? "sector has" : "sectors have"} unmet estimated demand:</strong><dl>{unmetSectors.map((item) => <div key={item.name}><dt>{item.name}</dt><dd>{number(item.unmet)} ML/day · {Math.round(item.coverage*100)}% covered</dd></div>)}</dl>{largestUnmet?.name === "Households" && <p>About {number(spatialResult.affected)} households are equivalent to the current household allocation shortfall.</p>}</> : <><strong>All estimated demand is covered.</strong><p>No estimated-demand shortfall is calculated for this scenario.</p></>)}
-            {daloyQuestion === daloyQuestions[2] && (spatialResult.shortage > .05 ? <><strong>{number(spatialResult.allocable)} ML/day is available against {number(spatialResult.demand)} ML/day of estimated baseline demand.</strong><p>The model applies {number(spatialInput.nrw)}% non-revenue water loss and protects {number(spatialInput.reserve)}% of reservoir capacity. Allocation requests share the available pool in this scenario’s priority order. Source inflow is {number(spatialResult.supply)} ML/day; {number(spatialStorageUsed)} ML is withdrawn from storage, leaving {number(spatialResult.shortage)} ML/day of estimated demand unmet.</p></> : <><strong>There is no current estimated-demand shortfall.</strong><p>Available allocations cover estimated demand. Any changes to source output, reserve, allocation requests, or priority order update this reading.</p></>)}
+            {daloyQuestion === daloyQuestions[2] && (spatialResult.shortage > .05 ? <><strong>{number(spatialResult.allocable)} ML/day is available against {number(spatialResult.demand)} ML/day of estimated baseline demand.</strong><p>The model applies {number(spatialInput.nrw)}% non-revenue water loss and protects {number(spatialInput.reserve)}% of gross source supply. Allocation requests share the available pool in this scenario’s priority order. Source inflow is {number(spatialResult.supply)} ML/day; {number(spatialStorageUsed)} ML is withdrawn from storage, leaving {number(spatialResult.shortage)} ML/day of estimated demand unmet.</p></> : <><strong>There is no current estimated-demand shortfall.</strong><p>Available allocations cover estimated demand. Any changes to source output, reserve, allocation requests, or priority order update this reading.</p></>)}
             {daloyQuestion === daloyQuestions[3] && <><strong>Change one assumption at a time to see what moves the balance.</strong><p>Adjust sector allocation requests or their priority, reduce NRW, or increase source output. Watch allocated water, estimated-demand shortfalls, and closing storage update together.</p><button className="daloy-action" onClick={() => {setControlTab("Allocation");setControlsOpen(true);setDaloyOpen(false);}}>Open allocation controls <ArrowRight size={14}/></button></>}
             {spatialResult.developmentCount>0 && <p>{spatialResult.developmentCount} {spatialResult.developmentCount===1?"included establishment adds":"included establishments add"} {number(spatialResult.developmentDemand)} ML/day to {spatialMunicipality.name}'s sector demand. These values come from the profiles set in the Development planner.</p>}
             <small>Computed directly from the current scenario inputs; no extra AI estimate.</small>

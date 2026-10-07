@@ -62,10 +62,12 @@ export function simulateMunicipality(m:Municipality,p:Inputs,developments:Develo
   },0);
   const households=Math.round(m.households+addedHouseholds);
   const demand=sum(demands);
-  const nrw=clamp(p.nrw-nrwReductionPoints,0,80)/100, reserve=clamp(p.reserve,0,90)/100;
-  const reserveVolume=m.capacity*reserve;
+  const nrw=clamp(p.nrw-nrwReductionPoints,0,100)/100, reserve=clamp(p.reserve,0,100)/100;
+  // GIS WaterEconomyCalculator deducts NRW and reserve independently from gross supply.
+  // Opening storage is an additional simulator pool; it is already stored water.
+  const nrwVolume=supply*nrw, reserveVolume=supply*reserve;
   const grossAvailable=supply+m.opening;
-  const allocable=Math.max(0,grossAvailable-reserveVolume)*(1-nrw);
+  const allocable=Math.max(0,grossAvailable-nrwVolume-reserveVolume);
   const allocationRequests=legacyDistribution
     ? demands.map(v=>v*(p.allocation??100)/100)
     : p.allocationTargets.map(v=>Math.min(Math.max(0,v),allocable));
@@ -111,14 +113,14 @@ export function simulateMunicipality(m:Municipality,p:Inputs,developments:Develo
       remaining-=amount;
     }
   }
-  const allocation=sum(allocations), physicalRemaining=grossAvailable-allocation/(1-nrw), ending=clamp(physicalRemaining,0,m.capacity), spill=Math.max(0,physicalRemaining-m.capacity), reserveShortfall=Math.max(0,reserveVolume-ending);
+  const allocation=sum(allocations), physicalRemaining=grossAvailable-nrwVolume-allocation, ending=clamp(physicalRemaining,0,m.capacity), spill=Math.max(0,physicalRemaining-m.capacity), reserveShortfall=Math.max(0,reserveVolume-ending);
   const unmetBySector=demands.map((value,index)=>Math.max(0,value-allocations[index])) as SectorValues;
   const excessAllocations=allocations.map((value,index)=>Math.max(0,value-demands[index])) as SectorValues;
   const coverage=demands.map((v,i)=>v?Math.min(1,allocations[i]/v):1);
   const affected=Math.max(0,Math.round(households*(1-coverage[0])));
   const monthlyExpense=15*p.price, assisted=Math.min(households,Math.floor(p.budget/300));
   const spent=assisted*300, averageAssistance=spent/Math.max(1,households);
-  return {id:m.id,name:m.name,supply,infrastructureSupplyMlDay,nrwReductionPoints,demand,existingDemand,developmentDemand,developmentDemands,developmentCount:activeDevelopments.length,allocation,allocationRequests,excessAllocations,unmetBySector,excess:sum(excessAllocations),allocable,ending,spill,capacity:m.capacity,opening:m.opening,nrw,reserve,reserveVolume,reserveShortfall,sourceOutputs,demands,allocations,coverage,shortage:sum(unmetBySector),gap:Math.max(0,demand-supply),households,affected,assisted,spent,unspent:p.budget-spent,monthlyExpense,burden:Math.max(0,monthlyExpense-averageAssistance)/p.income*100,livelihood:1-coverage[1]};
+  return {id:m.id,name:m.name,supply,infrastructureSupplyMlDay,nrwReductionPoints,demand,existingDemand,developmentDemand,developmentDemands,developmentCount:activeDevelopments.length,allocation,allocationRequests,excessAllocations,unmetBySector,excess:sum(excessAllocations),allocable,ending,spill,capacity:m.capacity,opening:m.opening,nrw,nrwVolume,reserve,reserveVolume,reserveShortfall,sourceOutputs,demands,allocations,coverage,shortage:sum(unmetBySector),gap:Math.max(0,demand-Math.max(0,supply-nrwVolume-reserveVolume)),households,affected,assisted,spent,unspent:p.budget-spent,monthlyExpense,burden:Math.max(0,monthlyExpense-averageAssistance)/p.income*100,livelihood:1-coverage[1]};
 }
 export function simulate(scenario:Scenario,scope='combined') {
   const priorityOrder=isPriorityOrder(scenario.priorityOrder)?scenario.priorityOrder:defaultPriorityOrder;

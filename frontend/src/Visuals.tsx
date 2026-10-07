@@ -250,7 +250,7 @@ export function FlowDiagram({ result }: { result: Result }) {
       </svg>
       <p className="flow-note">
         Storage contribution:{" "}
-        {result.results.reduce((total, item) => total + Math.max(0, item.allocation / (1 - item.nrw) - item.supply), 0).toFixed(1)} ML withdrawn over one
+        {result.results.reduce((total, item) => total + Math.max(0, item.allocation + item.nrwVolume - item.supply), 0).toFixed(1)} ML withdrawn over one
         day. Remaining storage: {result.ending.toFixed(1)} ML.
       </p>
     </div>

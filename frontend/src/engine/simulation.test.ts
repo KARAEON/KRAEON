@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {baseline,simulate,municipalities} from './simulation';
-import { assetTemplateById, calculateBenefitPerPeso, calculateDevelopmentDemand, calculateInterventionValuation, defaultDevelopmentInputs, type BenefitPerPesoProject, type Development } from './developments';
+import {baseline,simulate,simulateMunicipality,municipalities,type Inputs} from './simulation';
+import { assetTemplateById, calculateBenefitPerPeso, calculateDevelopmentDemand, calculateInterventionValuation, calculateRecoveredWaterTariffValue, defaultDevelopmentInputs, type BenefitPerPesoProject, type Development } from './developments';
 test('planner intervention valuation matches GIS simple lifecycle calculations',()=>{
   const result=calculateInterventionValuation({capexPhp:100000,annualOpexPhp:1000,usefulLifeYears:10,waterGainM3PerDay:10,householdsBenefited:100});
   assert.equal(result.simpleLifecycleCostPhp,110000);
   assert.equal(result.lifetimeWaterM3,36500);
-  assert.ok(Math.abs((result.simpleLifecycleCostPerM3Php||0)-110000/36500)<1e-12);
+  assert.equal(result.simpleLifecycleCostPerM3Php,3.0137);
   assert.equal(result.capexPerHouseholdPhp,1000);
   assert.equal(result.economicLossAvoidedPhpYear,null);
   assert.equal(calculateInterventionValuation({capexPhp:100,annualOpexPhp:0,usefulLifeYears:15,waterGainM3PerDay:0,householdsBenefited:0}).simpleLifecycleCostPerM3Php,null);
@@ -22,9 +22,53 @@ test('planner benefit-per-peso uses GIS default weights and ranks the portfolio'
   assert.equal(result[0].publicBenefitScore,70);
   assert.equal(result[1].publicBenefitScore,50);
 });
+test('GIS rounding is applied to valuation before cost-efficiency ranking',()=>{
+  const base={capexPhp:1,annualOpexPhp:0,usefulLifeYears:1,householdsBenefited:3,equityScore:50,economicBenefitScore:50,reliabilityScore:50};
+  const ranking=calculateBenefitPerPeso([{...base,id:'a',name:'A',waterGainM3PerDay:1},{...base,id:'b',name:'B',waterGainM3PerDay:2}]);
+  assert.equal(ranking[0].valuation.simpleLifecycleCostPerM3Php,.0014);
+  assert.equal(ranking[0].valuation.capexPerHouseholdPhp,.33);
+  assert.equal(ranking[1].valuation.simpleLifecycleCostPerM3Php,.0027);
+  assert.equal(ranking[1].subscores.costEfficiency,51.85);
+  assert.equal(ranking[1].publicBenefitScore,50.19);
+});
+test('GIS peso indicator values recovered water even when delivery is unchanged',()=>{
+  const s=baseline();s.inputs.calbayog.allocationTargets=[1,0,0,0];
+  const before=simulate(s,'calbayog').results[0];
+  s.inputs.calbayog.nrw=10;
+  const after=simulate(s,'calbayog').results[0];
+  assert.equal(before.allocation,after.allocation);
+  assert.equal(calculateRecoveredWaterTariffValue(before.nrwVolume,after.nrwVolume,32),109440);
+  assert.equal(calculateRecoveredWaterTariffValue(1,2,32),0);
+  assert.equal(calculateRecoveredWaterTariffValue(2,1,0),null);
+  assert.equal(calculateInterventionValuation({capexPhp:1.005,annualOpexPhp:0,usefulLifeYears:1,waterGainM3PerDay:1,householdsBenefited:1}).simpleLifecycleCostPhp,1.01);
+});
+test('water supply matches GIS deductions when opening storage is zero',()=>{
+  const m={...municipalities[1],opening:0};
+  const p:Inputs={...baseline().inputs[m.id],sourceOutputs:[100],nrw:28,reserve:22,sectorDemand:[60,0,0,0],allocationTargets:[60,0,0,0]};
+  const r=simulateMunicipality(m,p);
+  assert.ok(Math.abs(r.nrwVolume-28)<1e-9);
+  assert.equal(r.reserveVolume,22);
+  assert.equal(r.allocable,50);
+  assert.equal(r.shortage,10);
+  assert.equal(r.gap,10);
+  assert.equal(r.affected,750);
+});
+test('opening storage adds to GIS supply without a second NRW deduction',()=>{
+  const s=baseline();const p=s.inputs.pinabacdao;
+  p.sourceOutputs=[100];p.nrw=28;p.reserve=22;p.allocationTargets=[100,100,100,100];
+  const r=simulate(s,'pinabacdao').results[0];
+  assert.equal(r.allocable,58);
+  assert.equal(r.allocation,58);
+  assert.equal(r.ending,16);
+  assert.equal(r.spill,6);
+  p.nrw=100;
+  const noSupply=simulate(s,'pinabacdao').results[0];
+  assert.equal(noSupply.allocable,0);
+  assert.ok(Number.isFinite(noSupply.ending));
+});
 import { migrateScenario, readSavedScenarios, persistSavedScenarios, scenarioStorageKey, scenarioBackupKey } from './scenarios';
-test('baseline includes the configured protected reserve in closing storage',()=>{const r=simulate(baseline());assert.equal(r.supply,76);assert.equal(r.demand,85);assert.equal(r.results.length,3);assert.equal(r.gap,9);assert.ok(Math.abs(r.ending-17.6)<1e-8);});
-test('drought, supplementary supply, and allocation obey daily physical mass balance',()=>{for(let drought=0;drought<=100;drought+=10)for(const allocation of [0,50,100]){const s=baseline();for(const p of Object.values(s.inputs)){p.drought=drought;p.allocation=allocation;p.protect=true;p.allocationShares=[55,20,15,10];}for(const r of simulate(s).results){assert.ok(r.ending>=0&&r.ending<=r.capacity);assert.ok(Math.abs(r.opening+r.supply-r.allocation/(1-r.nrw)-r.ending-r.spill)<1e-8);r.coverage.forEach(c=>assert.ok(c>=0&&c<=1.000001));assert.ok(r.allocation<=r.demand+1e-8);}}});
+test('baseline includes the configured protected reserve in closing storage',()=>{const r=simulate(baseline());assert.equal(r.supply,76);assert.equal(r.demand,85);assert.equal(r.results.length,3);assert.equal(r.gap,47);assert.ok(Math.abs(r.ending-17.22)<1e-8);});
+test('drought, supplementary supply, and allocation obey daily physical mass balance',()=>{for(let drought=0;drought<=100;drought+=10)for(const allocation of [0,50,100]){const s=baseline();for(const p of Object.values(s.inputs)){p.drought=drought;p.allocation=allocation;p.protect=true;p.allocationShares=[55,20,15,10];}for(const r of simulate(s).results){assert.ok(r.ending>=0&&r.ending<=r.capacity);assert.ok(Math.abs(r.opening+r.supply-r.nrwVolume-r.allocation-r.ending-r.spill)<1e-8);r.coverage.forEach(c=>assert.ok(c>=0&&c<=1.000001));assert.ok(r.allocation<=r.demand+1e-8);}}});
 test('zero source output draws closing storage down to the protected reserve',()=>{const s=baseline();s.inputs.pinabacdao.supply=0;const r=simulate(s,'pinabacdao').results[0];assert.equal(r.supply,0);assert.ok(Math.abs(r.ending-r.reserveVolume)<1e-8);assert.ok(Math.abs(Math.max(0,r.ending-r.reserveVolume))<1e-8);assert.ok(r.shortage>0);});
 test('policies remain local and improve supply',()=>{const s=baseline();s.inputs.pinabacdao.drought=60;const before=simulate(s,'pinabacdao');s.inputs.pinabacdao.supplementary=true;const after=simulate(s,'pinabacdao');assert.equal(after.supply-before.supply,5);assert.ok(after.shortage<before.shortage);assert.equal(simulate(s,'catbalogan').supply,42);});
 test('reducing NRW returns recovered water to allocable supply and sector deliveries',()=>{const s=baseline();const p=s.inputs.pinabacdao;p.drought=65;const baselineResult=simulate(s,'pinabacdao');p.nrw=10;const reducedNrwResult=simulate(s,'pinabacdao');assert.ok(reducedNrwResult.allocable>baselineResult.allocable);assert.ok(reducedNrwResult.allocation>=baselineResult.allocation);assert.ok(reducedNrwResult.shortage<=baselineResult.shortage);});
@@ -54,7 +98,7 @@ test('multiple developments combine and preserve physical mass balance',()=>{
   const expected=scenario.developments.reduce((total,item)=>total+calculateDevelopmentDemand(item),0);
   assert.ok(Math.abs(result.developmentDemand-expected)<1e-9);
   assert.ok(result.shortage>0);
-  assert.ok(Math.abs(result.opening+result.supply-result.allocation/(1-result.nrw)-result.ending-result.spill)<1e-8);
+  assert.ok(Math.abs(result.opening+result.supply-result.nrwVolume-result.allocation-result.ending-result.spill)<1e-8);
   assert.equal(result.households,38000+Math.round(1200*.85));
 });
 
@@ -97,7 +141,7 @@ test('new allocation requests preserve physical water balance across scarcity an
     p.drought=drought;p.nrw=nrw;p.allocationTargets=requests as typeof p.allocationTargets;
     const r=simulate(s,'pinabacdao').results[0];
     assert.ok(r.allocation<=r.allocable+1e-9);
-    assert.ok(Math.abs(r.opening+r.supply-r.allocation/(1-r.nrw)-r.ending-r.spill)<1e-9);
+    assert.ok(Math.abs(r.opening+r.supply-r.nrwVolume-r.allocation-r.ending-r.spill)<1e-9);
     assert.equal(r.shortage,r.unmetBySector.reduce((a,b)=>a+b,0));
     assert.ok(r.coverage.every(c=>c>=0&&c<=1));
   }

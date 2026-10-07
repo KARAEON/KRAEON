@@ -253,6 +253,12 @@ export type InterventionValuation = {
   householdsBenefited:number;
 };
 
+const gisRound=(value:number,digits:number)=>Math.round((value+Number.EPSILON)*10**digits)/10**digits;
+
+/** GIS NRWScenarioCalculator's tariff indicator; ML is converted to m³. */
+export function calculateRecoveredWaterTariffValue(baselineLossMl:number,scenarioLossMl:number,pricePhpPerM3:number) {
+  return pricePhpPerM3>0?gisRound(Math.max(0,baselineLossMl-scenarioLossMl)*1000*pricePhpPerM3,2):null;
+}
 /** Mirrors GIS InterventionValuationService's simple, undiscounted valuation. */
 export function calculateInterventionValuation(input:InterventionValuation) {
   const capex=Math.max(0,input.capexPhp);
@@ -263,10 +269,10 @@ export function calculateInterventionValuation(input:InterventionValuation) {
   const simpleLifecycleCostPhp=capex+annualOpex*usefulLifeYears;
   const lifetimeWaterM3=waterGainM3PerDay*365*usefulLifeYears;
   return {
-    simpleLifecycleCostPhp,
-    lifetimeWaterM3,
-    simpleLifecycleCostPerM3Php:lifetimeWaterM3>0?simpleLifecycleCostPhp/lifetimeWaterM3:null,
-    capexPerHouseholdPhp:householdsBenefited>0?capex/householdsBenefited:null,
+    simpleLifecycleCostPhp:gisRound(simpleLifecycleCostPhp,2),
+    lifetimeWaterM3:gisRound(lifetimeWaterM3,2),
+    simpleLifecycleCostPerM3Php:lifetimeWaterM3>0?gisRound(simpleLifecycleCostPhp/lifetimeWaterM3,4):null,
+    capexPerHouseholdPhp:householdsBenefited>0?gisRound(capex/householdsBenefited,2):null,
     economicLossAvoidedPhpYear:null,
   };
 }
@@ -297,8 +303,8 @@ export function calculateBenefitPerPeso(projects:BenefitPerPesoProject[]) {
     return {
       id:project.id,
       valuation,
-      subscores:{waterBenefit,equity,economicLivelihood:economic,reliability,costEfficiency},
-      publicBenefitScore:waterBenefit*.30+equity*.25+economic*.20+reliability*.15+costEfficiency*.10,
+      subscores:{waterBenefit:gisRound(waterBenefit,2),equity:gisRound(equity,2),economicLivelihood:gisRound(economic,2),reliability:gisRound(reliability,2),costEfficiency:gisRound(costEfficiency,2)},
+      publicBenefitScore:gisRound(waterBenefit*.30+equity*.25+economic*.20+reliability*.15+costEfficiency*.10,2),
     };
   }).sort((a,b)=>b.publicBenefitScore-a.publicBenefitScore).map((project,index)=>({...project,rank:index+1}));
 }
