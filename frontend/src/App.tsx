@@ -1129,16 +1129,16 @@ export default function App() {
                     <button className="planner-launch" type="button" onClick={()=>{setPlannerSelectedId(null);setPlannerOpen(true);}}><Building2 size={15}/> Development planner{spatialDevelopments.length>0?<span>{spatialDevelopments.length}</span>:null}</button>
                     <div className="tariff-control-wrap">
                       <button className="tariff-launch" type="button" aria-expanded={tariffPanelOpen} aria-controls="main-tariff-control" onClick={() => setTariffPanelOpen(open => !open)}>
-                        <WalletCards size={15}/><span>Tariff</span><strong>₱{number(spatialInput.price)}/m³</strong>
+                        <WalletCards size={15}/><span>Water value</span><strong>₱{number(spatialInput.price)}/m³</strong>
                       </button>
                       {tariffPanelOpen && <div className="tariff-popover" id="main-tariff-control">
-                        <div className="tariff-popover-head"><div><strong>Water tariff</strong><small>Illustrative scenario assumption</small></div><button type="button" aria-label="Close tariff settings" onClick={() => setTariffPanelOpen(false)}><X size={15}/></button></div>
+                        <div className="tariff-popover-head"><div><strong>Water value</strong><small>Illustrative scenario assumption</small></div><button type="button" aria-label="Close water value settings" onClick={() => setTariffPanelOpen(false)}><X size={15}/></button></div>
                         <label className="tariff-price-field">
-                          <span>Tariff for {spatialMunicipality.name}</span>
-                          <div><input aria-label={`Tariff price for ${spatialMunicipality.name}`} type="number" min="0" max="100" step="0.01" value={tariffDraft?.id===spatialMunicipality.id?tariffDraft.value:spatialInput.price} onChange={event=>{const raw=event.currentTarget.value;setTariffDraft({id:spatialMunicipality.id,value:raw});const value=Number(raw);if(raw!==""&&Number.isFinite(value)&&value>=0&&value<=100)updateMunicipal(spatialMunicipality.id,{price:value});}} onBlur={()=>{if(tariffDraft?.id===spatialMunicipality.id){const parsed=Number(tariffDraft.value);if(tariffDraft.value!==""&&Number.isFinite(parsed))updateMunicipal(spatialMunicipality.id,{price:Math.max(0,Math.min(100,parsed))});setTariffDraft(null);}}}/><span>₱/m³</span></div>
+                          <span>Water value for {spatialMunicipality.name}</span>
+                          <div><input aria-label={`Water value for ${spatialMunicipality.name}`} type="number" min="0" max="100" step="0.01" value={tariffDraft?.id===spatialMunicipality.id?tariffDraft.value:spatialInput.price} onChange={event=>{const raw=event.currentTarget.value;setTariffDraft({id:spatialMunicipality.id,value:raw});const value=Number(raw);if(raw!==""&&Number.isFinite(value)&&value>=0&&value<=100)updateMunicipal(spatialMunicipality.id,{price:value});}} onBlur={()=>{if(tariffDraft?.id===spatialMunicipality.id){const parsed=Number(tariffDraft.value);if(tariffDraft.value!==""&&Number.isFinite(parsed))updateMunicipal(spatialMunicipality.id,{price:Math.max(0,Math.min(100,parsed))});setTariffDraft(null);}}}/><span>₱/m³</span></div>
                           <small>Enter a price from ₱0 to ₱100 per m³.</small>
                         </label>
-                        <section className={`tariff-model-legend tariff-pressure-${affordability.toLowerCase()}`} aria-label="Tariff impact on model buildings">
+                        <section className={`tariff-model-legend tariff-pressure-${affordability.toLowerCase()}`} aria-label="Water value impact on model buildings">
                           <div className="tariff-affordability-head"><span>Affordability by establishment</span><strong>{affordability} household burden: {number(spatialResult.burden)}%</strong></div>
                           <div className="tariff-impact-list">
                             {tariffImpact.map(item=><div className="tariff-impact-row" key={item.key}>
@@ -1215,7 +1215,7 @@ export default function App() {
                   <div className="facility-inventory-head"><h4>Sector inventory</h4><span>Counts with provenance</span></div>
                   <dl>{facilityInventory.map(([label,value,source]) => <div key={label}><dt>{label}</dt><dd>{value}</dd><small>{source}</small></div>)}</dl>
                 </section>
-                <div className="profile-economic-note"><span>Household affordability</span><strong>{number(spatialResult.burden)}% of income</strong><small>SIMULATED · {money(spatialInput.price)}/m³ tariff</small></div>
+                <div className="profile-economic-note"><span>Household affordability</span><strong>{number(spatialResult.burden)}% of income</strong><small>SIMULATED · {money(spatialInput.price)}/m³ water value</small></div>
                 <p className="profile-note">Facility counts and pressure are unconfigured. They are shown as data needed rather than estimated.</p>
               </aside>}
 
@@ -1256,7 +1256,7 @@ export default function App() {
                   <div><strong>{nrwPercentagePointChange >= 0 ? "−" : "+"}{number(Math.abs(nrwPercentagePointChange))} pp</strong><span>NRW change from demo baseline</span></div>
                   <div><strong>{spatialInput.price > 0 ? `₱${number(nrwValueEstimate)}/day` : "Not estimated"}</strong><span>Potential value of added deliveries · ESTIMATED</span></div>
                 </div>
-                <p className="nrw-method-note">Source loss uses simulated inflow plus opening storage × NRW. Allocable water uses the live reservoir, protected reserve, and loss model. Potential value uses only the additional simulated allocation at the current illustrative tariff of {money(spatialInput.price)}/m³; it is not a revenue forecast.</p>
+                <p className="nrw-method-note">Source loss uses simulated inflow plus opening storage × NRW. Allocable water uses the live reservoir, protected reserve, and loss model. Potential value uses only the additional simulated allocation at the current illustrative water value of {money(spatialInput.price)}/m³; it is not a revenue forecast.</p>
               </div>}
             </section>}
             {exploreLayout === "map-expanded" && <section className={`water-balance-panel ${waterBalanceOpen ? "expanded" : ""}`} aria-labelledby="water-balance-title">
