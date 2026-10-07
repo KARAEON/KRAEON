@@ -128,10 +128,10 @@ function DistributionLeak({ position, rate }: { position: [number, number, numbe
   </group>;
 }
 
-function DevelopmentStructure({ templateId, x, z, status = "proposed", ghost = false, valid = true, selected = false, active = true, label, onClick, onHover }: {
-  templateId:string; x:number; z:number; status?:DevelopmentStatus; ghost?:boolean; valid?:boolean; selected?:boolean; active?:boolean; label?:string; onClick?:()=>void; onHover?:(active:boolean)=>void;
+function DevelopmentStructure({ templateId, x, z, status = "proposed", ghost = false, valid = true, selected = false, active = true, tariffColor, label, onClick, onHover }: {
+  templateId:string; x:number; z:number; status?:DevelopmentStatus; ghost?:boolean; valid?:boolean; selected?:boolean; active?:boolean; tariffColor?:string; label?:string; onClick?:()=>void; onHover?:(active:boolean)=>void;
 }) {
-  const color=ghost && !valid ? "#d95757" : active ? developmentColor[status] : "#a7aaa7";
+  const color=ghost && !valid ? "#d95757" : tariffColor && active && !ghost ? tariffColor : active ? developmentColor[status] : "#a7aaa7";
   const material=(shade=color)=><meshStandardMaterial color={shade} transparent={ghost || !active} opacity={ghost ? .57 : active ? 1 : .36} roughness={.86} flatShading />;
   const block=(key:string,position:[number,number,number],size:[number,number,number],shade=color)=><mesh key={key} position={position} castShadow={!ghost}><boxGeometry args={size}/>{material(shade)}</mesh>;
   const roof=(key:string,height:number,size:[number,number,number])=>block(key,[0,height,0],size,ghost?color:"#f1f0ec");
@@ -157,7 +157,7 @@ function canPlaceDevelopment(x:number,z:number,layout:Layout,developments:Develo
   return developments.every(item=>Math.hypot(x-item.position[0],z-item.position[1])>1.15);
 }
 
-function Model({ layout, sectors, focusedSector, onSectorHover, onSelectSector, nrw, developments, placingTemplateId, hoverPoint, onPlace, selectedDevelopmentId, onSelectDevelopment }: {
+function Model({ layout, sectors, focusedSector, onSectorHover, onSelectSector, nrw, developments, placingTemplateId, hoverPoint, onPlace, selectedDevelopmentId, onSelectDevelopment, showTariffPressure, tariffImpactColors }: {
   layout: Layout;
   sectors: SectorDatum[];
   focusedSector: string | null;
@@ -170,6 +170,8 @@ function Model({ layout, sectors, focusedSector, onSectorHover, onSelectSector, 
   onPlace?: (position:[number,number])=>void;
   selectedDevelopmentId?: string | null;
   onSelectDevelopment?: (id:string)=>void;
+  showTariffPressure: boolean;
+  tariffImpactColors: Record<string,string>;
 }) {
   const [hovered, setHovered] = useState<SectorName | null>(null);
   const [hoveredDevelopment,setHoveredDevelopment]=useState<string | null>(null);
@@ -178,6 +180,7 @@ function Model({ layout, sectors, focusedSector, onSectorHover, onSelectSector, 
   // The selected sector keeps its live coverage color while the other sectors
   // fade back, making the relationship between a card and its buildings clear.
   const color = (name: SectorName) => {
+    if (showTariffPressure) return tariffImpactColors.households || "#2b9d78";
     const item = sector(name);
     if (!item) return palette.model;
     if (focusedSector && focusedSector !== name) return "#d8ddda";
@@ -244,13 +247,13 @@ function Model({ layout, sectors, focusedSector, onSectorHover, onSelectSector, 
       <Line points={[[layout.streetX,.32,layout.streetZ],[layout.streetX - .45,.32,1.25],[layout.streetX - .95,.32,1.85],[2.65,.32,1.85]]} color={palette.water} lineWidth={3} />
       <DistributionLeak position={[layout.streetX - .95,.32,1.85]} rate={nrw} />
 
-      {generic.map((b, i) => <Building key={i} {...b} />)}
+      {generic.map((b, i) => <Building key={i} {...b} color={palette.model} />)}
       {houses.map((h, i) => <House key={i} {...h} accent={color("Households")} highlighted={isFocused("Households")} onClick={selectSector("Households")} onHover={setSectorHover("Households")} />)}
 
       {/* Farm plots and fish ponds represent the agriculture and fisheries channel. */}
       <group position={[layout.farm[0], 0, layout.farm[1]]}>
-        <Box position={[0,.11,0]} size={[2.15,.16,1.55]} color="#b9c7a3" highlighted={isFocused("Agriculture + fisheries")} onClick={selectSector("Agriculture + fisheries")} onHover={setSectorHover("Agriculture + fisheries")} />
-        {[-.5,-.15,.2,.55].map((z) => <Box key={z} position={[0,.205,z]} size={[1.9,.035,.075]} color={color("Agriculture + fisheries")} highlighted={isFocused("Agriculture + fisheries")} onClick={selectSector("Agriculture + fisheries")} onHover={setSectorHover("Agriculture + fisheries")} />)}
+        <Box position={[0,.11,0]} size={[2.15,.16,1.55]} color={showTariffPressure ? tariffImpactColors.agriculture : "#b9c7a3"} highlighted={isFocused("Agriculture + fisheries")} onClick={selectSector("Agriculture + fisheries")} onHover={setSectorHover("Agriculture + fisheries")} />
+        {[-.5,-.15,.2,.55].map((z) => <Box key={z} position={[0,.205,z]} size={[1.9,.035,.075]} color={showTariffPressure ? tariffImpactColors.agriculture : color("Agriculture + fisheries")} highlighted={isFocused("Agriculture + fisheries")} onClick={selectSector("Agriculture + fisheries")} onHover={setSectorHover("Agriculture + fisheries")} />)}
         <mesh position={[.72,.19,.48]} rotation={[-Math.PI/2,0,0]} onClick={selectSector("Agriculture + fisheries")} onPointerEnter={() => setSectorHover("Agriculture + fisheries")(true)} onPointerLeave={() => setSectorHover("Agriculture + fisheries")(false)}>
           <circleGeometry args={[.28,8]} /><meshStandardMaterial color={palette.water} />
         </mesh>
@@ -258,27 +261,27 @@ function Model({ layout, sectors, focusedSector, onSectorHover, onSelectSector, 
 
       {/* School campus */}
       <group position={[layout.school[0],0,layout.school[1]]}>
-        <Box position={[0,.48,0]} size={[1.45,.88,.75]} color={color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
-        <Box position={[0,.95,0]} size={[1.58,.1,.86]} color={color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
+        <Box position={[0,.48,0]} size={[1.45,.88,.75]} color={showTariffPressure ? tariffImpactColors.school : color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
+        <Box position={[0,.95,0]} size={[1.58,.1,.86]} color={showTariffPressure ? tariffImpactColors.school : color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
         <Box position={[.95,.08,.2]} size={[.9,.035,1.4]} color="#d8ded5" />
       </group>
 
       {/* City hall */}
       <group position={[layout.government[0],0,layout.government[1]]}>
-        <Box position={[0,.42,0]} size={[1.45,.65,.8]} color={color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
-        {[-.48,-.16,.16,.48].map(x => <Box key={x} position={[x,.42,.43]} size={[.11,.72,.11]} color={color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />)}
+        <Box position={[0,.42,0]} size={[1.45,.65,.8]} color={showTariffPressure ? tariffImpactColors.government : color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
+        {[-.48,-.16,.16,.48].map(x => <Box key={x} position={[x,.42,.43]} size={[.11,.72,.11]} color={showTariffPressure ? tariffImpactColors.government : color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />)}
       </group>
 
       {/* Commercial towers */}
       <group>
-        <Building x={layout.commercial[0]} z={layout.commercial[1]} h={1.65} color={color("Business + tourism")} highlighted={isFocused("Business + tourism")} onClick={selectSector("Business + tourism")} onHover={setSectorHover("Business + tourism")} />
-        <Building x={layout.commercial[0] + .77} z={layout.commercial[1] + .35} h={1.22} color={color("Business + tourism")} highlighted={isFocused("Business + tourism")} onClick={selectSector("Business + tourism")} onHover={setSectorHover("Business + tourism")} />
+        <Building x={layout.commercial[0]} z={layout.commercial[1]} h={1.65} color={showTariffPressure ? tariffImpactColors.business : color("Business + tourism")} highlighted={isFocused("Business + tourism")} onClick={selectSector("Business + tourism")} onHover={setSectorHover("Business + tourism")} />
+        <Building x={layout.commercial[0] + .77} z={layout.commercial[1] + .35} h={1.22} color={showTariffPressure ? tariffImpactColors.business : color("Business + tourism")} highlighted={isFocused("Business + tourism")} onClick={selectSector("Business + tourism")} onHover={setSectorHover("Business + tourism")} />
       </group>
 
       {/* Clinic */}
       <group position={[layout.clinic[0],0,layout.clinic[1]]}>
-        <Box position={[0,.42,0]} size={[1.05,.76,.72]} color={color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
-        <Box position={[0,.85,0]} size={[1.15,.12,.82]} color={color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
+        <Box position={[0,.42,0]} size={[1.05,.76,.72]} color={showTariffPressure ? tariffImpactColors.health : color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
+        <Box position={[0,.85,0]} size={[1.15,.12,.82]} color={showTariffPressure ? tariffImpactColors.health : color("Critical services")} highlighted={isFocused("Critical services")} onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
         <Box position={[0,.48,.37]} size={[.32,.09,.025]} color="white" onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
         <Box position={[0,.48,.37]} size={[.09,.32,.025]} color="white" onClick={selectSector("Critical services")} onHover={setSectorHover("Critical services")} />
       </group>
@@ -298,7 +301,7 @@ function Model({ layout, sectors, focusedSector, onSectorHover, onSelectSector, 
   </>;
 }
 
-export default function CityMaquette({ municipality, drought = 0, nrw = 28, sectors, focusedSector, onSectorHover, onSelectSector, developments = [], placingTemplateId, onPlace, selectedDevelopmentId, onSelectDevelopment }: {
+export default function CityMaquette({ municipality, drought = 0, nrw = 28, sectors, focusedSector, onSectorHover, onSelectSector, developments = [], placingTemplateId, onPlace, selectedDevelopmentId, onSelectDevelopment, showTariffPressure = false, tariffImpactColors = {} }: {
   municipality: string;
   drought?: number;
   nrw?: number;
@@ -311,6 +314,8 @@ export default function CityMaquette({ municipality, drought = 0, nrw = 28, sect
   onPlace?: (position:[number,number])=>void;
   selectedDevelopmentId?: string | null;
   onSelectDevelopment?: (id:string)=>void;
+  showTariffPressure?: boolean;
+  tariffImpactColors?: Record<string,string>;
 }) {
   const layoutKey = municipality.toLowerCase().replace(/\s+city$/, "");
   const layout = layouts[layoutKey] || layouts.calbayog;
@@ -331,7 +336,7 @@ export default function CityMaquette({ municipality, drought = 0, nrw = 28, sect
   };
   return <div className={`maquette-wrap${placingTemplateId?" is-placing":""}`} ref={wrapper} onPointerMove={event=>{if(placingTemplateId)setHoverPoint(worldPoint(event.clientX,event.clientY));}} onPointerLeave={()=>setHoverPoint(null)} onDragOver={event=>{if(placingTemplateId){event.preventDefault();setHoverPoint(worldPoint(event.clientX,event.clientY));}}} onDrop={event=>{if(placingTemplateId){event.preventDefault();drop(event.clientX,event.clientY);}}}>
     <Canvas orthographic shadows dpr={[1, 1.5]} camera={{ position: [10,10,12], zoom: 52 }} onCreated={state=>{camera.current=state.camera;}} aria-label={`Interactive low-poly water planning model for ${municipality}. ${placingTemplateId?"Click or drop on the terrain to place a development.":"Drag to rotate and scroll to zoom."} Current NRW assumption: ${nrw} percent. ${drought ? `${drought} percent supply reduction.` : "Baseline scenario."}`}>
-      <Suspense fallback={null}><Model layout={layout} sectors={sectors} focusedSector={focusedSector} onSectorHover={onSectorHover} onSelectSector={onSelectSector} nrw={nrw} developments={developments} placingTemplateId={placingTemplateId} hoverPoint={hoverPoint} onPlace={onPlace} selectedDevelopmentId={selectedDevelopmentId} onSelectDevelopment={onSelectDevelopment} /></Suspense>
+      <Suspense fallback={null}><Model layout={layout} sectors={sectors} focusedSector={focusedSector} onSectorHover={onSectorHover} onSelectSector={onSelectSector} nrw={nrw} developments={developments} placingTemplateId={placingTemplateId} hoverPoint={hoverPoint} onPlace={onPlace} selectedDevelopmentId={selectedDevelopmentId} onSelectDevelopment={onSelectDevelopment} showTariffPressure={showTariffPressure} tariffImpactColors={tariffImpactColors} /></Suspense>
     </Canvas>
   </div>;
 }

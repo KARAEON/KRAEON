@@ -302,7 +302,7 @@ export default function TariffAffordabilityPanel({
 
       <section className="tariff-section demand-response-section">
         <div className="tariff-section-title">
-          No. 10 · Demand-Response Assumption
+          Demand-Response Assumption
         </div>
 
         <div className="demand-response-tag">
@@ -559,7 +559,7 @@ export default function TariffAffordabilityPanel({
 
                   {alert.ai_action && (
                     <span>
-                      DULOY AI:{" "}
+                      DALOY AI:{" "}
                       {
                         alert.ai_action
                       }
@@ -580,7 +580,7 @@ export default function TariffAffordabilityPanel({
                       size={13}
                     />
 
-                    Ask DULOY AI
+                    Ask DALOY AI
                   </button>
                 )}
               </div>
@@ -608,7 +608,7 @@ export default function TariffAffordabilityPanel({
         source pressure, affordability,
         sector satisfaction and alerts,
         then makes the newest results
-        available to DULOY AI.
+        available to DALOY AI.
       </div>
     </div>
   );

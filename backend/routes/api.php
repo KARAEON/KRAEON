@@ -88,6 +88,10 @@ Route::get(
     '/water-economy/benefit-per-peso/{psgcCode}',
     [PublicBenefitPerPesoController::class, 'show']
 );
+Route::post(
+    '/water-economy/benefit-per-peso/{psgcCode}/preview',
+    [PublicBenefitPerPesoController::class, 'preview']
+);
 
 Route::post(
     '/ai/decision-chat',

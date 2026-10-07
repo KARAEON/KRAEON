@@ -1,11 +1,17 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import waterEconomyData from "./data/water_economy_dataset_v3_238_barangays_sectors.json";
 import "./LGUDataPanel.css";
 
-export default function LGUDataPanel({ onBarangaySelect, activeBarangay }) {
-  const [selectedLGU, setSelectedLGU] = useState("Catbalogan City");
-  const [selectedBarangayCode, setSelectedBarangayCode] = useState("");
-  const [search, setSearch] = useState("");
+export default function LGUDataPanel({
+  onBarangaySelect,
+  activeBarangay,
+  view = "all",
+  selectedLGU = "Catbalogan City",
+  onLGUChange,
+  selectedBarangayCode = "",
+  search = "",
+  onSearchChange,
+}) {
 
   const barangays = waterEconomyData.barangays || [];
   const lguBaselines = waterEconomyData.lgu_baselines || [];
@@ -27,13 +33,10 @@ export default function LGUDataPanel({ onBarangaySelect, activeBarangay }) {
   const baseline = lguBaselines.find((item) => item.lgu === selectedLGU);
 
   function handleLGUChange(e) {
-    setSelectedLGU(e.target.value);
-    setSelectedBarangayCode("");
-    setSearch("");
+    onLGUChange?.(e.target.value);
   }
 
   function handleBarangayClick(barangay) {
-    setSelectedBarangayCode(barangay.psgc_code);
     onBarangaySelect?.(barangay);
   }
 
@@ -49,15 +52,18 @@ export default function LGUDataPanel({ onBarangaySelect, activeBarangay }) {
 
   const riskClass = (risk) =>
     risk ? risk.toLowerCase().replace(/\s+/g, "-") : "";
+  const showOverview = view === "all" || view === "overview";
+  const showBarangays = view === "all" || view === "barangays";
 
   return (
     <div className="lgu-panel">
       <div className="lgu-glow" />
 
+      {showOverview && <>
       <div className="lgu-panel-header">
         <div className="panel-icon">◈</div>
         <div>
-          <h2>DULOY Data Intelligence</h2>
+          <h2>DALOY Data Intelligence</h2>
           <p>Barangay-level water and economic decision support</p>
         </div>
       </div>
@@ -84,7 +90,17 @@ export default function LGUDataPanel({ onBarangaySelect, activeBarangay }) {
         PSA-backed population is combined with derived household and domestic-demand estimates.
         Economic and sector indicators are simulated prototype values.
       </div>
+      </>}
 
+      {showBarangays && <>
+      {view === "barangays" && <div className="lgu-controls">
+        <label>Local Government Unit</label>
+        <select value={selectedLGU} onChange={handleLGUChange}>
+          <option value="Catbalogan City">Catbalogan City</option>
+          <option value="Pinabacdao">Pinabacdao</option>
+          <option value="Calbayog City">Calbayog City</option>
+        </select>
+      </div>}
       <div className="barangay-section">
         <div className="barangay-section-title">
           <span>Barangays</span>
@@ -96,7 +112,7 @@ export default function LGUDataPanel({ onBarangaySelect, activeBarangay }) {
           type="text"
           placeholder="Search barangay..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => onSearchChange?.(e.target.value)}
         />
 
         <div className="barangay-list">
@@ -182,6 +198,7 @@ export default function LGUDataPanel({ onBarangaySelect, activeBarangay }) {
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }

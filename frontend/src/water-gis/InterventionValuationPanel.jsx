@@ -72,7 +72,7 @@ export default function InterventionValuationPanel({
       <header className="valuation-header">
         <div>
           <span>
-            NO. 14 · INTERVENTION
+            INTERVENTION
             ECONOMIC VALUATION
           </span>
 
@@ -141,9 +141,7 @@ export default function InterventionValuationPanel({
         data.valuations?.length ===
           0 ? (
         <div className="valuation-empty">
-          No saved interventions
-          yet. Add projects in
-          No. 13 INVEST first.
+          No saved interventions yet. Add an investment first.
         </div>
       ) : (
         <>

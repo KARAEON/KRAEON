@@ -112,7 +112,7 @@ export default function PublicBenefitPerPesoPanel({
       <header className="benefit-header">
         <div>
           <span>
-            NO. 15 · PUBLIC BENEFIT PER PESO
+            PUBLIC BENEFIT PER PESO
           </span>
 
           <h3>
@@ -244,8 +244,7 @@ export default function PublicBenefitPerPesoPanel({
         data?.ranking?.length ===
           0 && (
           <div className="benefit-empty">
-            Add No. 13 interventions
-            first.
+            Add interventions first.
           </div>
         )}
 

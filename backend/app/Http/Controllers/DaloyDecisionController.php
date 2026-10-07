@@ -33,6 +33,23 @@ class DaloyDecisionController extends Controller
 
             'history.*.text' =>
                 'required_with:history|string|max:1500',
+            'workflow_context' => 'nullable|array',
+            'workflow_context.changes' => 'required_with:workflow_context|array|min:1',
+            'workflow_context.changes.nrw_rate_pct' => 'sometimes|numeric|min:0|max:100',
+            'workflow_context.changes.gross_supply_m3_day' => 'sometimes|numeric|min:0',
+            'workflow_context.changes.source_capacity_m3_day' => 'sometimes|numeric|min:0',
+            'workflow_context.projects' => 'sometimes|array|max:12',
+            'workflow_context.projects.*.project_type' => 'required|string|max:80',
+            'workflow_context.projects.*.name' => 'required|string|max:160',
+            'workflow_context.projects.*.capex_php' => 'required|numeric|min:0',
+            'workflow_context.projects.*.annual_opex_php' => 'required|numeric|min:0',
+            'workflow_context.projects.*.useful_life_years' => 'required|integer|min:1|max:100',
+            'workflow_context.projects.*.water_gain_m3_per_day' => 'required|numeric|min:0',
+            'workflow_context.projects.*.households_benefited' => 'required|integer|min:0',
+            'workflow_context.projects.*.reliability_score' => 'required|numeric|min:0|max:100',
+            'workflow_context.projects.*.equity_score' => 'required|numeric|min:0|max:100',
+            'workflow_context.projects.*.economic_benefit_score' => 'required|numeric|min:0|max:100',
+            'workflow_context.projects.*.implementation_time_months' => 'required|integer|min:1|max:600',
         ]);
 
         /*
@@ -57,12 +74,40 @@ class DaloyDecisionController extends Controller
             );
         }
 
+        $workflowResults = null;
+        if (!empty($validated['workflow_context']) && !empty($validated['psgc_code'])) {
+            $barangay ??= WaterEconomyBarangay::where('psgc_code', $validated['psgc_code'])->firstOrFail();
+            $draft = $barangay->replicate();
+            $draft->exists = true;
+            $draft->setAttribute('id', $barangay->id);
+            foreach ($validated['workflow_context']['changes'] as $key => $value) {
+                $draft->setAttribute($key, $value);
+            }
+            $workflowResults = [
+                'scenario' => [
+                    'before' => $calculator->calculate($barangay),
+                    'after' => $calculator->calculate($draft),
+                    'changes' => $validated['workflow_context']['changes'],
+                    'saved' => false,
+                ],
+            ];
+            if (array_key_exists('projects', $validated['workflow_context'])) {
+                $savedProjects = \App\Models\WaterEconomyProject::where('psgc_code', $validated['psgc_code'])->get();
+                $draftProjects = collect($validated['workflow_context']['projects'] ?? [])->map(
+                    fn (array $project) => new \App\Models\WaterEconomyProject([...$project, 'psgc_code' => $validated['psgc_code']])
+                );
+                $workflowResults['intervention_ranking'] = $benefitService->rank(
+                    $savedProjects->concat($draftProjects), $valuationService
+                );
+            }
+        }
+
         /*
         |--------------------------------------------------------------------------
         | GENERAL PILOT-AREA CONTEXT
         |--------------------------------------------------------------------------
         |
-        | This keeps DULOY AI useful even when no barangay is selected.
+        | This keeps DALOY AI useful even when no barangay is selected.
         |
         */
 
@@ -126,7 +171,7 @@ class DaloyDecisionController extends Controller
                 } catch (\Throwable $error) {
                     /*
                      * One incomplete row should not break
-                     * the entire DULOY AI assistant.
+                     * the entire DALOY AI assistant.
                      */
                     continue;
                 }
@@ -175,18 +220,18 @@ class DaloyDecisionController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | DULOY AI SYSTEM INSTRUCTIONS
+        | DALOY AI SYSTEM INSTRUCTIONS
         |--------------------------------------------------------------------------
         */
 
         $system = <<<'PROMPT'
-You are DULOY AI, the decision assistant inside the DULOY Water Decision System.
+You are DALOY AI, the decision assistant inside the DALOY Water Decision System.
 
 ARCHITECTURE:
 User Inputs
 → Calculation Engines
 → Structured Results
-→ DULOY AI
+→ DALOY AI
 → Explanation / Suggestions
 
 NON-NEGOTIABLE RULES:
@@ -342,6 +387,8 @@ PROMPT;
 
             'general_context' =>
                 $generalContext,
+
+            'workflow_results' => $workflowResults,
         ];
 
         $messages[] = [
@@ -392,7 +439,7 @@ PROMPT;
         } catch (\Throwable $error) {
             return response()->json([
                 'message' =>
-                    'Unable to connect to DULOY AI.',
+                    'Unable to connect to DALOY AI.',
 
                 'details' =>
                     $error->getMessage(),
@@ -408,7 +455,7 @@ PROMPT;
         if ($response->failed()) {
             return response()->json([
                 'message' =>
-                    'DULOY AI request failed.',
+                    'DALOY AI request failed.',
 
                 'status' =>
                     $response->status(),
@@ -434,7 +481,7 @@ PROMPT;
         if ($content === '') {
             return response()->json([
                 'message' =>
-                    'DULOY AI returned an empty response.',
+                    'DALOY AI returned an empty response.',
             ], 502);
         }
 
@@ -819,7 +866,7 @@ PROMPT;
         }
 
         if (count($parts) === 0) {
-            return 'DULOY AI analyzed the available calculated context, but no concise recommendation was returned.';
+            return 'DALOY AI analyzed the available calculated context, but no concise recommendation was returned.';
         }
 
         return implode(
@@ -897,6 +944,6 @@ PROMPT;
 
     return $cleaned !== ''
         ? $cleaned
-        : 'DULOY AI analyzed the available information but could not format the response correctly.';
+        : 'DALOY AI analyzed the available information but could not format the response correctly.';
     }
 }

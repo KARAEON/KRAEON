@@ -45,7 +45,7 @@
 
 .nrw-input-section {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   padding: 12px 0;
   border-bottom: 1px solid #273239;
@@ -101,12 +101,12 @@
 .nrw-visual-title {
   margin-bottom: 8px;
   color: #8d9ba4;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
 }
 
 .nrw-pipe {
-  height: 12px;
+  height: 16px;
   overflow: hidden;
   border: 1px solid #31434c;
   border-radius: 999px;
@@ -128,7 +128,7 @@
   justify-content: space-between;
   margin-top: 7px;
   color: #74858e;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .nrw-visual-row strong {
@@ -151,12 +151,13 @@
 
 .nrw-results {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
   padding: 12px 0;
 }
 
 .nrw-metric {
+  min-width: 0;
   padding: 8px;
   border: 1px solid #29343b;
   border-radius: 6px;
@@ -174,6 +175,7 @@
   margin-top: 3px;
   color: #e4edf0;
   font-size: 10px;
+  overflow-wrap: anywhere;
 }
 
 .nrw-metric.highlight {
@@ -212,7 +214,7 @@
   display: block;
   margin-top: 3px;
   color: #cbd9de;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .nrw-alerts {

@@ -23,6 +23,9 @@ class ScenarioPreviewController extends Controller
             'changes.gross_supply_m3_day' =>
                 'sometimes|numeric|min:0',
 
+            'changes.source_capacity_m3_day' =>
+                'sometimes|numeric|min:0',
+
             'changes.proposed_tariff_php_m3' =>
                 'sometimes|numeric|min:0',
 

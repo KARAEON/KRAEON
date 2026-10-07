@@ -57,7 +57,7 @@ export async function getAiDecisionSnapshot(
     throw new Error(
       await readError(
         response,
-        "Unable to generate DULOY AI snapshot."
+        "Unable to generate DALOY AI snapshot."
       )
     );
   }

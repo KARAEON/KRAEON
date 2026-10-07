@@ -31,6 +31,7 @@ export default function NRWSimulatorPanel({
 
   const [allocable, setAllocable] =
     useState("");
+  const [proposedNrw, setProposedNrw] = useState("");
 
   const [loading, setLoading] =
     useState(false);
@@ -57,6 +58,7 @@ export default function NRWSimulatorPanel({
 
       setRecord(data.record);
       setNrw(data.nrw);
+      setProposedNrw(String(data.record?.proposed_nrw_rate_pct ?? data.record?.nrw_rate_pct ?? 0));
 
       setAllocable(
         data.nrw
@@ -104,6 +106,12 @@ export default function NRWSimulatorPanel({
       return;
     }
 
+    const proposedValue = Number(proposedNrw);
+    if (!Number.isFinite(proposedValue) || proposedValue < 0 || proposedValue > 100) {
+      setError("Proposed NRW rate must be between 0 and 100%.");
+      return;
+    }
+
     setSaving(true);
     setError("");
 
@@ -114,11 +122,13 @@ export default function NRWSimulatorPanel({
           {
             allocable_water_m3_day:
               allocableValue,
+            proposed_nrw_rate_pct: proposedValue,
           }
         );
 
       setRecord(data.record);
       setNrw(data.nrw);
+      setProposedNrw(String(data.record?.proposed_nrw_rate_pct ?? proposedValue));
 
       setAllocable(
         data.nrw
@@ -247,6 +257,11 @@ export default function NRWSimulatorPanel({
           </div>
         </label>
 
+        <label>
+          <span>Proposed NRW rate</span>
+          <div><input type="number" min="0" max="100" step="0.1" value={proposedNrw} onChange={(event) => setProposedNrw(event.target.value)} /><small>%</small></div>
+        </label>
+
         <p>
           NRW loss is calculated
           automatically using the
@@ -363,7 +378,7 @@ export default function NRWSimulatorPanel({
 
                   {alert.ai_action && (
                     <span>
-                      DULOY AI:{" "}
+                      DALOY AI:{" "}
                       {
                         alert.ai_action
                       }
@@ -384,7 +399,7 @@ export default function NRWSimulatorPanel({
                       size={12}
                     />
 
-                    Ask DULOY AI
+                    Ask DALOY AI
                   </button>
                 )}
               </div>

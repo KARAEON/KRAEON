@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  CircleHelp,
   FlaskConical,
-  Scale,
+  Maximize2,
+  Minimize2,
+  PanelRightOpen,
+  Settings2,
   Sparkles,
-  TriangleAlert,
   X,
 } from "lucide-react";
 
@@ -14,42 +15,25 @@ import {
 
 import "./ChatAssistant.css";
 
-const QUICK_ACTIONS = [
-  {
-    label: "Explain result",
-    icon: CircleHelp,
-    prompt:
-      "Explain the most important current result and what it means for the water economy.",
-  },
-  {
-    label: "Who is disadvantaged?",
-    icon: TriangleAlert,
-    prompt:
-      "Who is currently disadvantaged or most exposed by the selected water allocation, affordability, or shortage conditions?",
-  },
-  {
-    label: "Better value?",
-    icon: Scale,
-    prompt:
-      "Which saved intervention gives better public value per peso, and why? Mention the main trade-off.",
-  },
-  {
-    label: "What should I test?",
-    icon: Sparkles,
-    prompt:
-      "What specific scenario should I test next? If appropriate, return one safe suggested scenario.",
-  },
-];
-
 export default function ChatAssistant({
   outage,
   selectedBarangay,
+  workflowRequest,
 }) {
   const [open, setOpen] =
     useState(false);
 
+  const [panelSize, setPanelSize] =
+    useState("compact");
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = Number(window.localStorage.getItem("daloy-ai-font-size"));
+    return Number.isFinite(saved) && saved >= 14 && saved <= 24 ? saved : 16;
+  });
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   const [input, setInput] =
     useState("");
+  const [pendingWorkflowContext, setPendingWorkflowContext] = useState(null);
 
   const [loading, setLoading] =
     useState(false);
@@ -71,6 +55,14 @@ export default function ChatAssistant({
           "Ask about water supply, affordability, allocation, interventions, value per peso, or what scenario to test next.",
       },
     ]);
+
+  useEffect(() => {
+    if (!workflowRequest) return;
+    setOpen(true);
+    setPanelSize("half");
+    setInput(workflowRequest.prompt || "Explain these results.");
+    setPendingWorkflowContext(workflowRequest.context || null);
+  }, [workflowRequest?.id]);
 
   const send =
     async (
@@ -137,6 +129,7 @@ export default function ChatAssistant({
                     selectedBarangay
                       ?.psgc_code ??
                     null,
+                  workflow_context: pendingWorkflowContext,
                 }),
             }
           );
@@ -147,7 +140,7 @@ export default function ChatAssistant({
         if (!response.ok) {
           throw new Error(
             data?.message ||
-              "DULOY AI request failed."
+              "DALOY AI request failed."
           );
         }
 
@@ -169,14 +162,16 @@ export default function ChatAssistant({
           data.suggested_scenario
           ?? null
         );
+        setPendingWorkflowContext(null);
       } catch (error) {
+        setPendingWorkflowContext(null);
         setMessages(
           (previous) => [
             ...previous,
             {
               role: "assistant",
               text:
-                `Unable to contact DULOY AI: ${error.message}`,
+                `Unable to contact DALOY AI: ${error.message}`,
             },
           ]
         );
@@ -234,10 +229,26 @@ export default function ChatAssistant({
       ? selectedBarangay.lgu
       : "General Water Economy Context";
 
+  const nextPanelSize = {
+    compact: "half",
+    half: "full",
+    full: "compact",
+  }[panelSize];
+  const panelSizeLabel = {
+    compact: "Expand chat to half screen",
+    half: "Expand chat to full screen",
+    full: "Return chat to compact size",
+  }[panelSize];
+  const PanelSizeIcon = {
+    compact: PanelRightOpen,
+    half: Maximize2,
+    full: Minimize2,
+  }[panelSize];
+
   return (
     <>
       {open && (
-        <aside className="daloy-panel">
+        <aside className={`daloy-panel daloy-panel-${panelSize}`}>
           <header className="daloy-header">
             <div className="daloy-brand">
               <div className="daloy-mark">
@@ -248,7 +259,7 @@ export default function ChatAssistant({
 
               <div>
                 <strong>
-                  Ask DULOY AI
+                  Ask DALOY AI
                 </strong>
                 <span>
                   Decision Assistant
@@ -256,15 +267,62 @@ export default function ChatAssistant({
               </div>
             </div>
 
-            <button
-              type="button"
-              className="daloy-close"
-              onClick={() =>
-                setOpen(false)
-              }
-            >
-              <X size={15} />
-            </button>
+            <div className="daloy-header-actions">
+              <button
+                type="button"
+                className="daloy-panel-control"
+                aria-label="DALOY AI settings"
+                aria-expanded={settingsOpen}
+                title="DALOY AI settings"
+                onClick={() => setSettingsOpen((value) => !value)}
+              >
+                <Settings2 size={16} />
+              </button>
+              <button
+                type="button"
+                className="daloy-panel-control"
+                aria-label={panelSizeLabel}
+                title={panelSizeLabel}
+                onClick={() => setPanelSize(nextPanelSize)}
+              >
+                <PanelSizeIcon size={16} />
+              </button>
+              <button
+                type="button"
+                className="daloy-close"
+                aria-label="Close DALOY AI"
+                title="Close DALOY AI"
+                onClick={() => {
+                  setSettingsOpen(false);
+                  setOpen(false);
+                }}
+              >
+                <X size={15} />
+              </button>
+            </div>
+            {settingsOpen && (
+              <div className="daloy-settings-popover" role="group" aria-label="DALOY AI text settings">
+                <div className="daloy-settings-heading">
+                  <label htmlFor="daloy-font-size">Message font size</label>
+                  <output htmlFor="daloy-font-size">{fontSize}px</output>
+                </div>
+                <input
+                  id="daloy-font-size"
+                  type="range"
+                  min="14"
+                  max="24"
+                  step="1"
+                  value={fontSize}
+                  aria-label="DALOY AI message font size"
+                  onChange={(event) => {
+                    const nextSize = Number(event.target.value);
+                    setFontSize(nextSize);
+                    window.localStorage.setItem("daloy-ai-font-size", String(nextSize));
+                  }}
+                />
+                <div className="daloy-settings-range-labels"><span>Smaller</span><span>Larger</span></div>
+              </div>
+            )}
           </header>
 
           <div className="daloy-context">
@@ -306,6 +364,7 @@ export default function ChatAssistant({
 
                   <div
                     className={`daloy-bubble ${message.role}`}
+                    style={{ fontSize: `${fontSize}px` }}
                   >
                     <FormattedMessage
                       text={
@@ -324,7 +383,7 @@ export default function ChatAssistant({
                     size={11}
                   />
                 </div>
-                <div className="daloy-bubble assistant">
+                <div className="daloy-bubble assistant" style={{ fontSize: `${fontSize}px` }}>
                   Analyzing calculated context...
                 </div>
               </div>
@@ -398,49 +457,13 @@ export default function ChatAssistant({
             )}
           </div>
 
-          <div className="daloy-tools">
-            <div className="daloy-tools-label">
-              Quick actions
-            </div>
-
-            <div className="daloy-quick-grid">
-              {QUICK_ACTIONS.map(
-                ({
-                  label,
-                  icon: Icon,
-                  prompt,
-                }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    disabled={
-                      loading
-                    }
-                    onClick={() =>
-                      send(
-                        prompt
-                      )
-                    }
-                  >
-                    <Icon
-                      size={12}
-                    />
-                    <span>
-                      {label}
-                    </span>
-                  </button>
-                )
-              )}
-            </div>
-          </div>
-
           <div className="daloy-composer">
             <input
               value={input}
               placeholder={
                 selectedBarangay
                   ? `Ask about ${selectedBarangay.barangay}...`
-                  : "Ask DULOY AI..."
+                  : "Ask DALOY AI..."
               }
               onChange={(
                 event
@@ -478,7 +501,7 @@ export default function ChatAssistant({
 
           <div className="daloy-footer-note">
             Calculations happen first.
-            DULOY AI explains and proposes
+            DALOY AI explains and proposes
             tests. Suggested scenarios
             are previewed before any
             real change.
@@ -497,7 +520,7 @@ export default function ChatAssistant({
           <Sparkles
             size={15}
           />
-          Ask DULOY AI
+          Ask DALOY AI
         </button>
       )}
     </>

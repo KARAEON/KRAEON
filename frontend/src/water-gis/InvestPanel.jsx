@@ -415,7 +415,7 @@ export default function InvestPanel({
       <header className="invest-header">
         <div>
           <span>
-            NO. 13 · INVEST
+            INVESTMENT
           </span>
 
           <h3>
@@ -825,10 +825,7 @@ export default function InvestPanel({
       </section>
 
       <div className="invest-note">
-        No. 13 stores project
-        inputs only. Lifecycle cost,
-        cost per m³ and economic
-        valuation belong to No. 14.
+        Investment stores project inputs only. Lifecycle cost, cost per m³, and economic valuation are shown in Intervention Valuation.
       </div>
     </div>
   );

@@ -114,6 +114,17 @@ body{background:#F7F7F2;color:#173B3A}
 @media(prefers-reduced-motion:reduce){.dam-system-artboard,.dam-system-water,.dam-system-dry-waterways,.dam-system-storage b{transition:none}}
 @media(max-width:760px){.dam-system-artboard{height:108%}.dam-system-storage{right:14px;top:205px}.dam-view-hint{left:12px;bottom:72px}.dam-view-controls{right:12px;bottom:14px}}
 
+.model-stage>.dam-3d-model{background:#f7f8f7;perspective:none;cursor:grab}
+.dam-3d-model canvas{display:block;touch-action:none}
+.dam-3d-hint{position:absolute;left:18px;bottom:78px;pointer-events:none;padding:8px 12px;border:1px solid #d8e5dc;border-radius:20px;background:#ffffffe6;color:#526f6b;font-size:11px}
+.dam-3d-controls{position:absolute;right:18px;bottom:78px;display:flex;gap:6px;padding:5px;border:1px solid #d8e5dc;border-radius:10px;background:#fffffff0;cursor:default}
+.dam-3d-controls button{padding:9px 12px;border-radius:6px;color:#216f70;font-size:11px;background:#edf5f3}
+.dam-3d-controls button:hover{background:#d7e9e6}
+.dam-3d-controls button:focus-visible{outline:2px solid #216f70;outline-offset:2px}
+.dam-webgl-fallback{position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);max-width:420px;padding:20px;border-radius:10px;background:white;color:#426c68;text-align:center}
+@media(max-width:760px){.dam-3d-hint{display:none}.dam-3d-controls{bottom:142px;right:12px}.dam-3d-controls button{min-height:40px}
+}
+
 /* Progressive disclosure: keep the reservoir primary and reveal controls only when requested. */
 .context-cluster{display:flex;align-items:center;gap:6px;min-width:0}.context-end{margin-left:auto}.simulation-view-tabs{display:flex;align-items:center;gap:2px;padding-left:6px;border-left:1px solid #d8e3dc}.simulation-view-tabs button{display:flex;align-items:center;gap:5px;min-height:34px;padding:7px 10px;border-radius:7px;color:#60736f;font-size:11px;font-weight:600;white-space:nowrap}.simulation-view-tabs button:hover{background:#e8f0ee}.simulation-view-tabs button.active{background:#216f70;color:#fff;box-shadow:0 3px 10px #216f7028}.context-actions{display:flex;align-items:center;gap:4px;padding-left:6px;border-left:1px solid #d8e3dc}.context-actions button{min-height:34px;border-radius:7px;color:#426663}.context-actions button:hover{background:#e5efec;color:#174f51}.context-reset{width:36px;display:grid;place-items:center}.context-save{display:flex;align-items:center;gap:6px;padding:7px 11px;background:#216f70!important;color:#fff!important;font-size:11px;font-weight:650}.context-save:hover{background:#175f60!important}
 .source-intro{margin:14px 0 10px}.source-group{margin:0;border-top:1px solid #e3eae7}.source-group:last-child{border-bottom:1px solid #e3eae7}.source-provider{display:grid;grid-template-columns:minmax(0,1fr) auto 16px;align-items:center;gap:7px;min-height:46px;margin:0;padding:8px 2px;color:#496461;cursor:pointer;list-style:none}.source-provider::-webkit-details-marker{display:none}.source-provider>span{display:flex;align-items:center;gap:7px;min-width:0;font-size:10px;font-weight:600}.source-provider strong{font-size:10px;font-weight:700;color:#1d5552;white-space:nowrap}.source-provider>svg{transition:transform .2s ease}.source-group[open] .source-provider>svg{transform:rotate(90deg)}.source-breakdown{padding:0 3px 9px 19px}.source-group[open] .source-breakdown{animation:disclosure-in .18s ease both}

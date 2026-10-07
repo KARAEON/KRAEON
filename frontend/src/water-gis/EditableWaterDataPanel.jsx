@@ -116,7 +116,7 @@ export default function EditableWaterDataPanel({ psgcCode, onSaved }) {
       {alert.severity === "advisory" ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}<div><strong>{alert.title}</strong><span>{alert.message}</span></div>
     </div>)}</section>}
     <button className="ew-save" disabled={saving} onClick={save}><Save size={15} />{saving ? "Saving and recalculating…" : "Save shared GIS data"}</button>
-    <p className="ew-note">Saved changes update the same Laravel record used by the DULOY data editor.</p>
+    <p className="ew-note">Saved changes update the same Laravel record used by the DALOY data editor.</p>
   </div>;
 }
 

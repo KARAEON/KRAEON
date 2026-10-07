@@ -10,11 +10,12 @@ import InvestPanel from "./InvestPanel";
 
 import DecisionSnapshotPanel from "./DecisionSnapshotPanel";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { motion, AnimatePresence } from "framer-motion";
 
 import PublicBenefitPerPesoPanel from "./PublicBenefitPerPesoPanel";
+import BarangayWorkflowPanel from "./BarangayWorkflowPanel";
 
 
 import {
@@ -77,6 +78,17 @@ import {
 } from "lucide-react";
 
 import LGUDataPanel from "./LGUDataPanel";
+
+const dataCategories = [
+  { id: "overview", label: "Overview", icon: Map },
+  { id: "barangays", label: "Barangays", icon: Home },
+  { id: "workflow", label: "Workflow", icon: Zap },
+  { id: "water", label: "Water System", icon: Droplets },
+  { id: "affordability", label: "Affordability", icon: CircleDollarSign },
+  { id: "investment", label: "Investment", icon: Factory },
+  { id: "benefits", label: "Public Benefits", icon: HeartPulse },
+  { id: "decision", label: "Decision", icon: Activity },
+];
 
 
 
@@ -177,15 +189,37 @@ export default function MissionControlSidebar({
   onToggleOutage,
 
   onBarangaySelect,
+  onAskDaloy,
   lguKey,
 
 }) {
 
   const [railCollapsed, setRailCollapsed] = useState(false);
 
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const max = Math.max(240, Math.min(520, window.innerWidth - 52));
+    const min = Math.min(300, max);
+    try {
+      const saved = Number(window.localStorage.getItem("daloy-gis-sidebar-width"));
+      if (Number.isFinite(saved) && saved > 0) return Math.max(min, Math.min(max, saved));
+    } catch { /* Use the default width when storage is unavailable. */ }
+    return Math.max(min, Math.min(max, 380));
+  });
+  const resizeStartRef = useRef(null);
+
   const [activeWorkspace, setActiveWorkspace] = useState("water");
 
   const [dataOpen, setDataOpen] = useState(false);
+
+  const [activeDataCategory, setActiveDataCategory] = useState("workflow");
+
+  const [dataSelectedLGU, setDataSelectedLGU] = useState("Catbalogan City");
+
+  const [dataSelectedBarangayCode, setDataSelectedBarangayCode] = useState("");
+
+  const [dataBarangaySearch, setDataBarangaySearch] = useState("");
+
+  const dataTabListRef = useRef(null);
 
   const [search, setSearch] = useState("");
 
@@ -198,6 +232,80 @@ export default function MissionControlSidebar({
   const selectGisSector = (key) => {
     setAnalysisMode(key);
   };
+
+  const resizeSidebar = (requestedWidth) => {
+    const max = Math.max(240, Math.min(520, window.innerWidth - 52));
+    const min = Math.min(300, max);
+    const next = Math.round(Math.max(min, Math.min(max, requestedWidth)));
+    setSidebarWidth(next);
+    try { window.localStorage.setItem("daloy-gis-sidebar-width", String(next)); }
+    catch { /* Resizing still works for this session when storage is unavailable. */ }
+  };
+
+  useEffect(() => {
+    const fitSidebarToViewport = () => {
+      const max = Math.max(240, Math.min(520, window.innerWidth - 52));
+      const min = Math.min(300, max);
+      setSidebarWidth((width) => Math.max(min, Math.min(max, width)));
+    };
+    window.addEventListener("resize", fitSidebarToViewport);
+    return () => window.removeEventListener("resize", fitSidebarToViewport);
+  }, []);
+
+  const handleResizePointerDown = (event) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeStartRef.current = { x: event.clientX, width: sidebarWidth };
+  };
+
+  const handleResizePointerMove = (event) => {
+    if (!resizeStartRef.current) return;
+    resizeSidebar(resizeStartRef.current.width + event.clientX - resizeStartRef.current.x);
+  };
+
+  const handleResizePointerUp = () => {
+    resizeStartRef.current = null;
+  };
+
+  const handleResizeKeyDown = (event) => {
+    const step = event.shiftKey ? 32 : 16;
+    if (event.key === "ArrowLeft") resizeSidebar(sidebarWidth - step);
+    else if (event.key === "ArrowRight") resizeSidebar(sidebarWidth + step);
+    else if (event.key === "Home") resizeSidebar(300);
+    else if (event.key === "End") resizeSidebar(520);
+    else return;
+    event.preventDefault();
+  };
+
+  const handleDataTabKeyDown = (event) => {
+    const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]'));
+    const currentIndex = tabs.indexOf(document.activeElement);
+    let nextIndex = currentIndex;
+
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabs.length;
+    else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = tabs.length - 1;
+    else return;
+
+    event.preventDefault();
+    tabs[nextIndex]?.focus();
+    tabs[nextIndex]?.click();
+  };
+
+  useEffect(() => {
+    const tabList = dataTabListRef.current;
+    const activeTab = tabList?.querySelector('[aria-selected="true"]');
+    if (!tabList || !activeTab) return;
+
+    const tabLeft = activeTab.offsetLeft;
+    const tabRight = tabLeft + activeTab.offsetWidth;
+    if (tabLeft < tabList.scrollLeft) {
+      tabList.scrollTo({ left: tabLeft, behavior: "smooth" });
+    } else if (tabRight > tabList.scrollLeft + tabList.clientWidth) {
+      tabList.scrollTo({ left: tabRight - tabList.clientWidth, behavior: "smooth" });
+    }
+  }, [activeDataCategory]);
 
 
 
@@ -242,7 +350,7 @@ export default function MissionControlSidebar({
 
   return (
 
-    <aside className={`mc-shell ${railCollapsed ? "mc-collapsed" : ""}`}>
+    <aside className={`mc-shell ${railCollapsed ? "mc-collapsed" : ""}`} style={{ "--mc-sidebar-width": `${sidebarWidth}px` }}>
 
       <div className="mc-rail">
 
@@ -252,7 +360,7 @@ export default function MissionControlSidebar({
 
           type="button"
 
-          title="DULOY"
+          title="DALOY"
 
           onClick={() => setRailCollapsed((v) => !v)}
 
@@ -382,7 +490,7 @@ export default function MissionControlSidebar({
 
                 <div className="mc-kicker">WATER DECISION SYSTEM</div>
 
-                <h1>DULOY</h1>
+                <h1>DALOY</h1>
 
                 <p>Decision support for Samar LGUs</p>
 
@@ -761,107 +869,53 @@ export default function MissionControlSidebar({
 
 
 
-            <LGUDataPanel
-  activeBarangay={selectedBarangay}
-  onBarangaySelect={(barangay) => {
+            <div ref={dataTabListRef} className="mc-data-tabs" role="tablist" aria-label="LGU data categories" onKeyDown={handleDataTabKeyDown}>
+              {dataCategories.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  id={`mc-data-tab-${id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeDataCategory === id}
+                  aria-controls={`mc-data-panel-${id}`}
+                  tabIndex={activeDataCategory === id ? 0 : -1}
+                  className={`mc-data-tab${activeDataCategory === id ? " active" : ""}`}
+                  onClick={() => setActiveDataCategory(id)}
+                >
+                  <Icon size={14} aria-hidden="true" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
 
-    onBarangaySelect(barangay);
-
-  }}
-
-/>
-
-
-
-<EditableWaterDataPanel
-
-  psgcCode={selectedBarangay?.psgc_code}
-
-  onSaved={(data) => {
-
-    onBarangaySelect(data.record);
-
-
-
-    console.log(
-
-      "Latest calculated state:",
-
-      data.calculated
-
-    );
-
-  }}
-
-/>
-
-<TariffAffordabilityPanel
-
-  psgcCode={selectedBarangay?.psgc_code}
-
-  onSaved={(data) => {
-
-    onBarangaySelect(data.record);
-
-
-
-    console.log(
-
-      "Tariff scenario recalculated:",
-
-      data.calculated
-
-    );
-
-  }}
-
-/>
-
-
-
-<NRWSimulatorPanel
-
-  psgcCode={selectedBarangay?.psgc_code}
-
-  onSaved={(data) => {
-
-    onBarangaySelect(data.record);
-
-
-
-    console.log(
-
-      "NRW scenario recalculated:",
-
-      data.nrw
-
-    );
-
-  }}
-
-/>
-
-
-
-<InvestPanel
-
-  psgcCode={selectedBarangay?.psgc_code}
-
-  selectedBarangay={selectedBarangay}
-
-/>  
-
-<InterventionValuationPanel
-  psgcCode={selectedBarangay?.psgc_code}
-/>
-
-<PublicBenefitPerPesoPanel
-  psgcCode={selectedBarangay?.psgc_code}
-/>
-
-<DecisionSnapshotPanel
-  psgcCode={selectedBarangay?.psgc_code}
-/>
+            <div className="mc-data-category-content">
+              <section id="mc-data-panel-workflow" role="tabpanel" aria-labelledby="mc-data-tab-workflow" className="mc-data-category-panel" hidden={activeDataCategory !== "workflow"}>
+                <BarangayWorkflowPanel selectedBarangay={selectedBarangay} onBarangayUpdate={onBarangaySelect} onAskDaloy={onAskDaloy} />
+              </section>
+              <section id="mc-data-panel-overview" role="tabpanel" aria-labelledby="mc-data-tab-overview" className="mc-data-category-panel" hidden={activeDataCategory !== "overview"}>
+                <LGUDataPanel view="overview" selectedLGU={dataSelectedLGU} onLGUChange={(lgu) => { setDataSelectedLGU(lgu); setDataSelectedBarangayCode(""); setDataBarangaySearch(""); }} activeBarangay={selectedBarangay} onBarangaySelect={onBarangaySelect} selectedBarangayCode={dataSelectedBarangayCode} search={dataBarangaySearch} onSearchChange={setDataBarangaySearch} />
+              </section>
+              <section id="mc-data-panel-barangays" role="tabpanel" aria-labelledby="mc-data-tab-barangays" className="mc-data-category-panel" hidden={activeDataCategory !== "barangays"}>
+                <LGUDataPanel view="barangays" selectedLGU={dataSelectedLGU} onLGUChange={(lgu) => { setDataSelectedLGU(lgu); setDataSelectedBarangayCode(""); setDataBarangaySearch(""); }} activeBarangay={selectedBarangay} onBarangaySelect={(barangay) => { setDataSelectedBarangayCode(barangay.psgc_code); onBarangaySelect(barangay); }} selectedBarangayCode={dataSelectedBarangayCode} search={dataBarangaySearch} onSearchChange={setDataBarangaySearch} />
+              </section>
+              <section id="mc-data-panel-water" role="tabpanel" aria-labelledby="mc-data-tab-water" className="mc-data-category-panel" hidden={activeDataCategory !== "water"}>
+                <EditableWaterDataPanel psgcCode={selectedBarangay?.psgc_code} onSaved={(data) => { onBarangaySelect(data.record); console.log("Latest calculated state:", data.calculated); }} />
+                <NRWSimulatorPanel psgcCode={selectedBarangay?.psgc_code} onSaved={(data) => { onBarangaySelect(data.record); console.log("NRW scenario recalculated:", data.nrw); }} />
+              </section>
+              <section id="mc-data-panel-affordability" role="tabpanel" aria-labelledby="mc-data-tab-affordability" className="mc-data-category-panel" hidden={activeDataCategory !== "affordability"}>
+                <TariffAffordabilityPanel psgcCode={selectedBarangay?.psgc_code} onSaved={(data) => { onBarangaySelect(data.record); console.log("Tariff scenario recalculated:", data.calculated); }} />
+              </section>
+              <section id="mc-data-panel-investment" role="tabpanel" aria-labelledby="mc-data-tab-investment" className="mc-data-category-panel" hidden={activeDataCategory !== "investment"}>
+                <InvestPanel psgcCode={selectedBarangay?.psgc_code} selectedBarangay={selectedBarangay} />
+                <InterventionValuationPanel psgcCode={selectedBarangay?.psgc_code} />
+              </section>
+              <section id="mc-data-panel-benefits" role="tabpanel" aria-labelledby="mc-data-tab-benefits" className="mc-data-category-panel" hidden={activeDataCategory !== "benefits"}>
+                <PublicBenefitPerPesoPanel psgcCode={selectedBarangay?.psgc_code} />
+              </section>
+              <section id="mc-data-panel-decision" role="tabpanel" aria-labelledby="mc-data-tab-decision" className="mc-data-category-panel" hidden={activeDataCategory !== "decision"}>
+                <DecisionSnapshotPanel psgcCode={selectedBarangay?.psgc_code} />
+              </section>
+            </div>
 
 
           </motion.div>
@@ -869,6 +923,25 @@ export default function MissionControlSidebar({
         )}
 
       </AnimatePresence>
+
+      {!railCollapsed && <div
+        className="mc-resize-handle"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize GIS sidebar"
+        aria-valuemin={Math.min(300, Math.max(240, window.innerWidth - 52))}
+        aria-valuemax={Math.max(240, Math.min(520, window.innerWidth - 52))}
+        aria-valuenow={sidebarWidth}
+        aria-valuetext={`${sidebarWidth} pixels wide`}
+        tabIndex={0}
+        title="Drag to resize sidebar; use arrow keys for fine adjustment"
+        onPointerDown={handleResizePointerDown}
+        onPointerMove={handleResizePointerMove}
+        onPointerUp={handleResizePointerUp}
+        onPointerCancel={handleResizePointerUp}
+        onLostPointerCapture={handleResizePointerUp}
+        onKeyDown={handleResizeKeyDown}
+      />}
 
     </aside>
 

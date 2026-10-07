@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    WATER ECONOMY MISSION CONTROL
    Distinctive icon rail + workspace + floating scenario dock
    ============================================================ */
@@ -612,7 +612,7 @@
   z-index: 20;
   top: 0;
   left: 64px;
-  width: 360px;
+  width: min(360px, calc(100vw - 64px));
   height: 100vh;
   overflow-y: auto;
   padding: 12px;
@@ -817,6 +817,19 @@
 .economic-theme .mc-footer button.restore{color:#4e805b;background:#edf6ed}
 .economic-theme .mc-data-drawer{background:linear-gradient(165deg,#fbf9fc,#f2edf5);border-color:#e1d8e8;box-shadow:14px 0 36px rgba(44,28,58,.16)}
 .economic-theme .mc-drawer-head button{color:#74647e;background:#eee7f2}
+.mc-data-tabs{position:sticky;top:0;z-index:5;display:flex;gap:5px;overflow-x:auto;overscroll-behavior-x:contain;margin:0 -12px;padding:8px 12px;background:rgba(6,22,36,.98);border-bottom:1px solid rgba(103,232,249,.13);scrollbar-width:thin}
+.mc-data-tab{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 10px;border:1px solid transparent;border-radius:9px;color:#91a0aa;background:transparent;font:600 10px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;cursor:pointer;transition:color .16s ease,background .16s ease,border-color .16s ease}
+.mc-data-tab:hover{color:#dce6eb;background:rgba(255,255,255,.06)}
+.mc-data-tab.active{color:#fff;background:#8f55d2;border-color:#8f55d2;box-shadow:0 4px 12px rgba(143,85,210,.2)}
+.mc-data-tab:focus-visible{outline:2px solid #b890e5;outline-offset:2px}
+.mc-data-category-content{padding-top:10px}
+.mc-data-category-panel[hidden]{display:none!important}
+.mc-data-category-panel>.nrw-panel,.mc-data-category-panel>.ew-panel,.mc-data-category-panel>.invest-panel,.mc-data-category-panel>.valuation-panel{margin-bottom:14px}
+.economic-theme .mc-data-tabs{background:rgba(250,248,252,.98);border-color:#e7dfea}
+.economic-theme .mc-data-tab{color:#746780}
+.economic-theme .mc-data-tab:hover{color:#56327b;background:#f3edf8}
+.economic-theme .mc-data-tab.active{color:#fff;background:#8f55d2;border-color:#8f55d2}
+.economic-theme .mc-data-tab:focus-visible{outline-color:#8f55d2}
 .economic-theme .scenario-dock{background:rgba(250,248,252,.95);border-color:#e4dce9;box-shadow:0 12px 34px rgba(44,28,58,.16)}
 .economic-theme .scenario-context{color:#8f55d2;border-color:#e8e0ed}
 .economic-theme .scenario-context span{color:#91849a}
@@ -906,3 +919,96 @@
 .economic-theme .mc-data-drawer .data-note,.economic-theme .mc-data-drawer .lgu-panel .data-note{font-size:11px;line-height:1.55;color:#62586b}
 .economic-theme .mc-sector-edit{width:100%;display:flex;align-items:center;justify-content:center;margin-top:9px;padding:8px 10px;border:1px solid #cfb7e4;border-radius:8px;background:#f4edf9;color:#70419e;font-size:11px;font-weight:750;cursor:pointer}
 .economic-theme .mc-sector-edit:hover{border-color:#b997df;background:#eadcf7}
+
+/* Larger GIS control system for readability and touch use. */
+.economic-theme .mc-shell{width:380px;min-width:380px;font-size:14px}
+.economic-theme .mc-rail{width:68px;min-width:68px}
+.economic-theme .mc-panel{width:auto;min-width:0;flex:1}
+.economic-theme .mc-logo{width:48px;height:48px}
+.economic-theme .mc-nav,.economic-theme .mc-rail-bottom{gap:9px}
+.economic-theme .mc-rail-btn,.economic-theme .mc-collapse-btn{min-height:48px;height:48px}
+.economic-theme .mc-head{padding:78px 18px 14px}
+.economic-theme .mc-kicker,.economic-theme .mc-live,.economic-theme .mc-context span,.economic-theme .mc-drawer-head>span,.economic-theme .mc-section-head>span,.economic-theme .mc-subsection-title{font-size:12px;line-height:1.35}
+.economic-theme .mc-head h1{font-size:23px;line-height:1.15}
+.economic-theme .mc-head p,.economic-theme .mc-section-head p{font-size:14px;line-height:1.45}
+.economic-theme .mc-live{padding:8px 10px}
+.economic-theme .mc-context{gap:10px;margin:0 16px 12px;padding:12px}
+.economic-theme .mc-context strong{font-size:14px}
+.economic-theme .mc-context button{min-height:44px;padding:8px 10px;font-size:13px}
+.economic-theme .mc-search{min-height:48px;margin:0 16px 16px;padding:10px 12px}
+.economic-theme .mc-search input{font-size:14px}
+.economic-theme .mc-content{padding:0 16px 18px;font-size:14px}
+.economic-theme .mc-section-head h2{font-size:19px;line-height:1.25}
+.economic-theme .mc-layer-tile{min-height:94px;padding:13px}
+.economic-theme .mc-layer-tile span,.economic-theme .mc-command,.economic-theme .mc-analysis-item span{font-size:13px;line-height:1.35}
+.economic-theme .mc-layer-icon,.economic-theme .mc-sector-icon{width:38px;height:38px}
+.economic-theme .mc-sector,.economic-theme .mc-analysis-item{min-height:48px;padding:10px 12px}
+.economic-theme .mc-sector strong,.economic-theme .mc-sector span{font-size:13px;line-height:1.4}
+.economic-theme .mc-command{min-height:44px;padding:10px 12px}
+.economic-theme .mc-public-inventory>strong{font-size:14px}
+.economic-theme .mc-public-inventory>p,.economic-theme .mc-public-inventory-row>small{font-size:12px;line-height:1.5}
+.economic-theme .mc-public-inventory-row>span{font-size:13px}
+.economic-theme .mc-public-inventory-row>b{font-size:15px}
+.economic-theme .mc-footer-label{font-size:11px}
+.economic-theme .mc-footer strong{font-size:14px}
+.economic-theme .mc-footer button{min-height:44px;padding:9px 11px;font-size:12px}
+.economic-theme .mc-data-drawer{left:68px;width:min(440px,calc(100vw - 68px));padding:16px}
+.economic-theme .mc-drawer-head{padding:6px 4px 14px}
+.economic-theme .mc-drawer-head h2{font-size:20px}
+.economic-theme .mc-drawer-head button{width:44px;height:44px}
+.economic-theme .mc-data-tabs{gap:7px;margin:0 -16px;padding:9px 16px}
+.economic-theme .mc-data-tab{min-height:44px;padding:0 12px;font-size:13px;gap:8px}
+.economic-theme .mc-data-tab svg{width:17px;height:17px}
+.economic-theme .mc-data-category-content{padding-top:14px}
+.economic-theme .mc-data-drawer :is(.lgu-panel,.ew-panel,.tariff-panel,.nrw-panel,.invest-panel,.valuation-panel,.benefit-panel,.snapshot-panel,.bw-workflow){font-size:14px;line-height:1.5}
+.economic-theme .mc-data-drawer :is(.lgu-panel,.ew-panel,.tariff-panel,.nrw-panel,.invest-panel,.valuation-panel,.benefit-panel,.snapshot-panel,.bw-workflow) :is(p,span,small,label,dt,dd){font-size:12px;line-height:1.5}
+.economic-theme .mc-data-drawer :is(.lgu-panel,.ew-panel,.tariff-panel,.nrw-panel,.invest-panel,.valuation-panel,.benefit-panel,.snapshot-panel,.bw-workflow) :is(h2,h3){font-size:19px;line-height:1.3}
+.economic-theme .mc-data-drawer :is(.ew-panel,.tariff-panel,.nrw-panel,.invest-panel,.valuation-panel,.benefit-panel,.snapshot-panel,.bw-workflow) :is(h4,h5){font-size:15px;line-height:1.4}
+.economic-theme .mc-data-drawer :is(.ew-panel,.tariff-panel,.nrw-panel,.invest-panel,.valuation-panel,.benefit-panel,.snapshot-panel,.bw-workflow) :is(input:not([type=range]),select,textarea),.economic-theme .mc-data-drawer select,.economic-theme .mc-data-drawer textarea{font-size:14px;min-height:44px}
+.economic-theme .mc-data-drawer :is(.ew-save,.tariff-save,.nrw-save,.invest-save,.benefit-recalculate,.snapshot-actions button,.mc-sector-edit,.bw-workflow button){font-size:13px;min-height:44px}
+.economic-theme .mc-data-drawer :is(.lgu-panel,.ew-panel,.tariff-panel,.nrw-panel,.invest-panel,.valuation-panel,.benefit-panel,.snapshot-panel) button{min-height:44px;font-size:13px}
+.economic-theme .mc-data-drawer :is(.ew-metric,.tariff-metric,.nrw-metric,.invest-summary-metric,.invest-score,.valuation-result,.benefit-subscore,.snapshot-reason,.bw-metrics>div) :is(span,p,small){color:#62586b}
+.economic-theme .mc-data-drawer :is(.ew-metric,.tariff-metric,.nrw-metric,.invest-summary-metric,.invest-score,.valuation-result,.benefit-subscore,.bw-metrics>div) strong{font-size:16px;color:#382d42}
+.economic-theme .mc-data-drawer .data-note,.economic-theme .mc-data-drawer .lgu-panel .data-note{font-size:12px;line-height:1.55;color:#62586b}
+.economic-theme .mc-data-drawer .bw-workflow input{min-height:42px}
+.economic-theme .scenario-dock{gap:12px;max-width:calc(100% - 28px);padding:10px}
+.economic-theme .scenario-context span{font-size:11px;letter-spacing:.08em}
+.economic-theme .scenario-context strong{font-size:13px;max-width:170px}
+.economic-theme .scenario-actions{gap:7px}
+.economic-theme .scenario-actions button{min-height:44px;padding:9px 12px;font-size:13px;gap:8px}
+.economic-theme .scenario-actions button svg{width:18px;height:18px}
+.economic-theme .mc-shell.mc-collapsed{width:68px;min-width:68px}
+
+@media(max-width:1100px){
+  .economic-theme .mc-shell{width:360px;min-width:360px}
+  .economic-theme .mc-shell.mc-collapsed{width:68px;min-width:68px}
+  .economic-theme .scenario-context{display:none}
+  .economic-theme .scenario-dock{left:12px;right:12px;width:auto;max-width:none;justify-content:center;transform:none}
+  .economic-theme .scenario-actions{flex-wrap:wrap;justify-content:center}
+}
+@media(max-width:760px){
+  .economic-theme .mc-shell{position:absolute;top:0;left:0;width:min(390px,calc(100vw - 52px));min-width:min(390px,calc(100vw - 52px));height:100dvh}
+  .economic-theme .mc-shell.mc-collapsed{width:68px;min-width:68px}
+  .economic-theme .mc-panel{padding-bottom:env(safe-area-inset-bottom)}
+  .economic-theme .mc-data-drawer{width:calc(100vw - 68px);max-width:440px;height:100dvh;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+  .economic-theme .scenario-dock{left:50%;right:auto;bottom:12px;width:min(390px,calc(100vw - 24px));max-width:calc(100vw - 24px);display:grid;gap:8px;padding:10px;transform:translateX(-50%)}
+  .economic-theme .scenario-context{display:flex;padding:4px 6px;border-right:0;border-bottom:1px solid #e8e0ed}
+  .economic-theme .scenario-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .economic-theme .scenario-actions button{justify-content:center;min-width:0;padding:9px 8px;font-size:12px}
+}
+@media(max-width:520px){
+  .economic-theme .scenario-dock{position:fixed!important;left:76px!important;right:8px!important;bottom:12px!important;width:auto!important;max-width:none!important;transform:none!important}
+}
+
+/* User resizable GIS sidebar with mouse, touch, and keyboard support. */
+.economic-theme .mc-shell:not(.mc-collapsed){width:var(--mc-sidebar-width,380px);min-width:var(--mc-sidebar-width,380px)}
+.economic-theme .mc-panel{width:auto;min-width:0;flex:1}
+.economic-theme .mc-resize-handle{position:absolute;z-index:60;top:0;right:-7px;bottom:0;width:14px;cursor:col-resize;touch-action:none;outline:none}
+.economic-theme .mc-resize-handle::after{position:absolute;top:50%;left:5px;width:4px;height:58px;content:"";transform:translateY(-50%);border-radius:99px;background:rgba(129,105,147,.42);transition:background .15s ease,box-shadow .15s ease}
+.economic-theme .mc-resize-handle:hover::after,.economic-theme .mc-resize-handle:focus-visible::after,.economic-theme .mc-resize-handle:active::after{background:#9a61d1;box-shadow:0 0 0 3px rgba(143,85,210,.14)}
+@media(max-width:1100px){.economic-theme .mc-shell:not(.mc-collapsed){width:var(--mc-sidebar-width,380px);min-width:var(--mc-sidebar-width,380px)}}
+@media(max-width:760px){.economic-theme .mc-shell:not(.mc-collapsed){position:absolute;top:0;left:0;width:min(var(--mc-sidebar-width,380px),calc(100vw - 52px));min-width:min(var(--mc-sidebar-width,380px),calc(100vw - 52px));height:100dvh}.economic-theme .mc-resize-handle{right:-12px;width:24px}.economic-theme .mc-resize-handle::after{left:10px;width:4px;height:54px}}
+
+/* Keep the LGU drawer edge aligned with the resizable sidebar edge. */
+.economic-theme .mc-data-drawer{width:calc(var(--mc-sidebar-width,380px) - 68px);max-width:calc(100vw - 68px)}
+@media(max-width:760px){.economic-theme .mc-data-drawer{width:min(calc(var(--mc-sidebar-width,380px) - 68px),calc(100vw - 120px));max-width:440px}}

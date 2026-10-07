@@ -13,6 +13,9 @@ import mapLibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 
 maplibregl.setWorkerUrl(mapLibreWorkerUrl);
 
+const SERVICE_ZONE_FILL_COLOR = "#7C3AED";
+const SERVICE_ZONE_LINE_COLOR = "#4C1D95";
+
 import * as turf from "@turf/turf";
 
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -120,8 +123,41 @@ const sourceFeatures = {
 
 const facilityFeatures = {
   type: "FeatureCollection",
-  // Source counts are shown in Public welfare; synthetic sample points are not mapped.
+  // Verified Calbayog hospital locations. These points are separate from the
+  // citywide inventory totals shown in the sidebar.
   features: [],
+};
+
+const calbayogFacilityFeatures = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      properties: { id: "calbayog-district-hospital", name: "Calbayog District Hospital", category: "Health", source: "OpenStreetMap / Mapcarta" },
+      geometry: { type: "Point", coordinates: [124.59904, 12.06846] },
+    },
+    {
+      type: "Feature",
+      properties: { id: "adventist-hospital-calbayog", name: "Adventist Hospital - Calbayog", category: "Health", source: "OpenStreetMap / Mapcarta" },
+      geometry: { type: "Point", coordinates: [124.5662, 12.06824] },
+    },
+    {
+      type: "Feature",
+      properties: { id: "st-camillus-hospital", name: "St. Camillus Hospital", category: "Health", source: "OpenStreetMap / Mapcarta" },
+      geometry: { type: "Point", coordinates: [124.54685, 12.0778] },
+    },
+  ],
+};
+
+const catbaloganFacilityFeatures = {
+  type: "FeatureCollection",
+  features: [
+    { type: "Feature", properties: { id: "samar-national-school", name: "Samar National School", category: "School", source: "OpenStreetMap-derived location" }, geometry: { type: "Point", coordinates: [124.88386, 11.77352] } },
+    { type: "Feature", properties: { id: "catbalogan-iii-central-school", name: "Catbalogan III Central School", category: "School", source: "OpenStreetMap" }, geometry: { type: "Point", coordinates: [124.88436, 11.77979] } },
+    { type: "Feature", properties: { id: "catbalogan-v-central-school", name: "Catbalogan V Central Elementary School", category: "School", source: "OpenStreetMap" }, geometry: { type: "Point", coordinates: [124.87749, 11.78388] } },
+    { type: "Feature", properties: { id: "catbalogan-iv-central-school", name: "Catbalogan IV Central School", category: "School", source: "OpenStreetMap" }, geometry: { type: "Point", coordinates: [124.86683, 11.79408] } },
+    { type: "Feature", properties: { id: "catbalogan-city-hall", name: "Catbalogan City Hall", category: "Government", source: "OpenStreetMap" }, geometry: { type: "Point", coordinates: [124.88364, 11.77548] } },
+  ],
 };
 
 
@@ -497,7 +533,7 @@ const buildLguMapLayers = (lgu, center) => {
   if (!lgu || lgu === "catbalogan" || lgu === "samar") {
     return {
       sources: sourceFeatures,
-      facilities: facilityFeatures,
+      facilities: catbaloganFacilityFeatures,
       households: householdFeatures,
       pipelines: pipelineFeatures,
       zones: serviceZone,
@@ -510,7 +546,9 @@ const buildLguMapLayers = (lgu, center) => {
   const lguName = lgu === "calbayog" ? "Calbayog" : "Pinabacdao";
   return {
     sources: translateFeatureCollection(sourceFeatures, delta, lguName),
-    facilities: translateFeatureCollection(facilityFeatures, delta, lguName),
+    facilities: lgu === "calbayog"
+      ? calbayogFacilityFeatures
+      : translateFeatureCollection(facilityFeatures, delta, lguName),
     households: translateFeatureCollection(householdFeatures, delta, lguName),
     pipelines: translateFeatureCollection(pipelineFeatures, delta, lguName),
     zones: translateFeatureCollection(serviceZone, delta, lguName),
@@ -629,6 +667,27 @@ const buildSectorChoropleth = (mode, lguName) => {
   return { geojson: { type: "FeatureCollection", features }, maxValue, breaks, recordCount: values.length, source };
 };
 
+const buildHouseholdDistribution = (lguName) => {
+  const countsByCode = new Map(waterEconomyData.barangays.map((record) => [
+    String(record.psgc_code),
+    Number(record.households_2024_estimated || 0),
+  ]));
+  const features = barangayBoundaryData.features
+    .filter((feature) => !lguName || feature.properties.lgu === lguName)
+    .map((feature) => ({
+      ...feature,
+      properties: {
+        ...feature.properties,
+        household_estimate: countsByCode.get(String(feature.properties.psgc_code)) ?? null,
+      },
+    }))
+    .filter((feature) => feature.properties.household_estimate != null);
+  return {
+    type: "FeatureCollection",
+    features,
+  };
+};
+
 
 
 // ==============================
@@ -649,7 +708,6 @@ export default function App() {
     pinabacdao: { center: [124.994, 11.594], zoom: 11.2 },
   }[requestedLgu] || { center: [124.907, 11.806], zoom: 11.6 };
   const waterLayers = buildLguMapLayers(requestedLgu, mapFocus.center);
-  const isIllustrativeNetwork = ["calbayog", "pinabacdao"].includes(requestedLgu);
   const embedded = new URLSearchParams(window.location.search).get("embedded") === "1";
 
   const barangays = waterEconomyData.barangays;
@@ -681,6 +739,7 @@ const assets = developmentAssets.assets;
   const [selectedBarangayData, setSelectedBarangayData] =
 
   useState(null);
+  const [workflowRequest, setWorkflowRequest] = useState(null);
 
   const boundaryLgu = BOUNDARY_LGU_NAMES[requestedLgu]
     || BOUNDARY_LGU_NAMES[selectedBarangayData?.lgu?.toLowerCase()]
@@ -776,6 +835,11 @@ const assets = developmentAssets.assets;
 
   const [outage, setOutage] = useState(false);
 
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
+    typeof window !== "undefined"
+      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+  );
+
 
 
   // ==============================
@@ -804,7 +868,7 @@ const assets = developmentAssets.assets;
 
     health: true,
 
-    government: false,
+    government: !requestedLgu || requestedLgu === "catbalogan",
 
 
 
@@ -1127,6 +1191,34 @@ const assets = developmentAssets.assets;
         layout: { visibility: SECTOR_MAP_MODES.includes(analysisMode) ? "visible" : "none" },
         paint: { "line-color": "#54217c", "line-width": 3 },
       });
+      map.addSource("household-distribution", {
+        type: "geojson",
+        data: buildHouseholdDistribution(boundaryLgu),
+      });
+      map.addLayer({
+        id: "household-distribution-fill",
+        type: "fill",
+        source: "household-distribution",
+        paint: {
+          "fill-color": ["interpolate", ["linear"], ["get", "household_estimate"], 0, "#ecfdf5", 250, "#bbf7d0", 750, "#4ade80", 2000, "#15803d"],
+          "fill-opacity": 0.38,
+        },
+        layout: { visibility: layers.households ? "visible" : "none" },
+      });
+      map.on("click", "household-distribution-fill", (event) => {
+        const feature = event.features?.[0];
+        if (!feature) return;
+        const name = feature.properties?.barangay || "Barangay";
+        const estimate = Number(feature.properties?.household_estimate || 0);
+        const localRecord = barangays.find((row) => String(row.psgc_code) === String(feature.properties?.psgc_code));
+        if (localRecord) selectBarangayRecord(localRecord);
+        new maplibregl.Popup()
+          .setLngLat(event.lngLat)
+          .setHTML(`<strong>${name}</strong><br/>Estimated households: ${estimate.toLocaleString()}`)
+          .addTo(map);
+      });
+      map.on("mouseenter", "household-distribution-fill", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "household-distribution-fill", () => { map.getCanvas().style.cursor = ""; });
       map.on("mouseenter", "sector-boundaries-fill", () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", "sector-boundaries-fill", () => { map.getCanvas().style.cursor = ""; });
       map.on("click", "sector-boundaries-fill", (event) => {
@@ -1167,7 +1259,7 @@ const assets = developmentAssets.assets;
 
         paint: {
 
-          "fill-color": "#16a34a",
+          "fill-color": SERVICE_ZONE_FILL_COLOR,
 
           "fill-opacity": 0.42,
 
@@ -1189,7 +1281,7 @@ const assets = developmentAssets.assets;
 
         paint: {
 
-          "line-color": "#065f46",
+          "line-color": SERVICE_ZONE_LINE_COLOR,
 
           "line-width": 4,
 
@@ -1203,6 +1295,7 @@ const assets = developmentAssets.assets;
 
       map.moveLayer("zones-fill", "sector-boundaries-fill");
       map.moveLayer("zones-line", "sector-boundaries-fill");
+      map.moveLayer("household-distribution-fill", "zones-fill");
 
       // RIVERS
 
@@ -1301,7 +1394,24 @@ const assets = developmentAssets.assets;
 
 
       map.addLayer({
+        id: "pipelines-main-flow",
+        type: "line",
+        source: "pipelines",
+        filter: ["==", ["get", "type"], "main"],
+        layout: {
+          visibility: layers.pipelines ? "visible" : "none",
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#a5f3fc",
+          "line-width": 2.4,
+          "line-opacity": 0.95,
+          "line-dasharray": [0, 4, 3],
+        },
+      });
 
+      map.addLayer({
         id: "pipelines-distribution",
 
 
@@ -1339,6 +1449,24 @@ const assets = developmentAssets.assets;
       });
 
 
+
+      map.addLayer({
+        id: "pipelines-distribution-flow",
+        type: "line",
+        source: "pipelines",
+        filter: ["==", ["get", "type"], "distribution"],
+        layout: {
+          visibility: layers.pipelines ? "visible" : "none",
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#e0f2fe",
+          "line-width": 1.8,
+          "line-opacity": 0.95,
+          "line-dasharray": [0, 4, 3],
+        },
+      });
 
       // ==========================
 
@@ -2047,9 +2175,17 @@ const assets = developmentAssets.assets;
 
           layers.pipelines,
 
+        "pipelines-main-flow":
+
+          layers.pipelines,
+
 
 
         "pipelines-distribution":
+
+          layers.pipelines,
+
+        "pipelines-distribution-flow":
 
           layers.pipelines,
 
@@ -2068,6 +2204,10 @@ const assets = developmentAssets.assets;
 
 
         "households-circle":
+
+          layers.households,
+
+        "household-distribution-fill":
 
           layers.households,
 
@@ -2166,6 +2306,62 @@ const assets = developmentAssets.assets;
   }, [layers, analysisMode]);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (!mediaQuery) return undefined;
+    const updatePreference = (event) => setPrefersReducedMotion(event.matches);
+    setPrefersReducedMotion(mediaQuery.matches);
+    mediaQuery.addEventListener?.("change", updatePreference);
+    return () => mediaQuery.removeEventListener?.("change", updatePreference);
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !layers.pipelines || prefersReducedMotion) return undefined;
+
+    const dashSequence = [
+      [0, 4, 3],
+      [1, 4, 2],
+      [2, 4, 1],
+      [3, 4, 0],
+      [2, 4, 1],
+      [1, 4, 2],
+    ];
+    let sequenceIndex = 0;
+    let timerId;
+
+    const animatePipelines = () => {
+      if (!map.getLayer("pipelines-main-flow") || !map.getLayer("pipelines-distribution-flow")) return;
+      const dashArray = dashSequence[sequenceIndex];
+      map.setPaintProperty("pipelines-main-flow", "line-dasharray", dashArray);
+      map.setPaintProperty("pipelines-distribution-flow", "line-dasharray", dashArray);
+      sequenceIndex = (sequenceIndex + 1) % dashSequence.length;
+    };
+
+    const startAnimation = () => {
+      if (timerId || !map.getLayer("pipelines-main-flow")) return;
+      animatePipelines();
+      timerId = window.setInterval(animatePipelines, 110);
+    };
+
+    if (map.isStyleLoaded() && map.getLayer("pipelines-main-flow")) startAnimation();
+    else map.once("load", startAnimation);
+
+    return () => {
+      if (timerId) window.clearInterval(timerId);
+      map.off("load", startAnimation);
+    };
+  }, [layers.pipelines, prefersReducedMotion]);
+
+  useEffect(() => {
+    const updateHouseholdDistribution = () => {
+      const source = mapRef.current?.getSource("household-distribution");
+      source?.setData(buildHouseholdDistribution(boundaryLgu));
+    };
+    if (mapRef.current?.getSource("household-distribution")) updateHouseholdDistribution();
+    else mapRef.current?.once("load", updateHouseholdDistribution);
+  }, [boundaryLgu]);
+
+  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const applySectorLayerVisibility = () => {
@@ -2225,7 +2421,7 @@ const assets = developmentAssets.assets;
 
           ? "#dc2626"
 
-          : "#16a34a"
+          : SERVICE_ZONE_FILL_COLOR
 
       );
 
@@ -2261,7 +2457,7 @@ const assets = developmentAssets.assets;
 
           ? "#7f1d1d"
 
-          : "#065f46"
+          : SERVICE_ZONE_LINE_COLOR
 
       );
 
@@ -2462,6 +2658,7 @@ const assets = developmentAssets.assets;
         showDependencyArea={showDependencyArea}
         onToggleOutage={() => setOutage((previous) => !previous)}
         onBarangaySelect={selectBarangayRecord}
+        onAskDaloy={(prompt, context) => setWorkflowRequest({ id: Date.now(), prompt, context })}
         lguKey={requestedLgu || "catbalogan"}
       />
 
@@ -2489,7 +2686,7 @@ const assets = developmentAssets.assets;
 
             <h2>
 
-              DULOY | Water Dependency Map
+              DALOY | Water Dependency Map
 
             </h2>
 
@@ -2512,8 +2709,8 @@ const assets = developmentAssets.assets;
 
 
           <div className="topbar-badges">
-            <a className="back-main-btn" href="./" aria-label="Back to DULOY main interface">
-              <span aria-hidden="true">←</span> Back to DULOY
+            <a className="back-main-btn" href="./" aria-label="Back to DALOY main interface">
+              <span aria-hidden="true">←</span> Back to DALOY
             </a>
 
 
@@ -2603,13 +2800,6 @@ const assets = developmentAssets.assets;
           className="map"
 
         />
-        {isIllustrativeNetwork && (
-          <div className="illustrative-network-note" role="note">
-            <strong>Illustrative water network</strong>
-            <span>Demo geometry shown for {requestedLgu === "calbayog" ? "Calbayog City" : "Pinabacdao"}. Replace with surveyed local asset locations when available.</span>
-          </div>
-        )}
-
         <ScenarioDock
           outage={outage}
           analysisMode={analysisMode}
@@ -2660,7 +2850,7 @@ const assets = developmentAssets.assets;
           </button>
 
           <button className="legend-toggle" type="button" aria-pressed={layers.households} onClick={() => toggleLayer("households")} title="Toggle household locations">
-            <span className={`legend-dot ${outage ? "danger" : "safe"}`} aria-hidden="true" />Households
+            <span className="legend-household-swatch" aria-hidden="true" />Household estimates by barangay
           </button>
 
           <button className="legend-toggle" type="button" aria-pressed={layers.schools} onClick={() => toggleLayer("schools")} title="Toggle school locations">
@@ -2983,6 +3173,7 @@ const assets = developmentAssets.assets;
 
           outage={outage}
           selectedBarangay={selectedBarangayData}
+          workflowRequest={workflowRequest}
 
         />
 

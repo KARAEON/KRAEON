@@ -23,7 +23,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1600,
     rollupOptions: {
       input: {
-        duloy: resolve(process.cwd(), 'index.html'),
+        daloy: resolve(process.cwd(), 'index.html'),
         gis: resolve(process.cwd(), 'gis.html'),
       },
       output: {

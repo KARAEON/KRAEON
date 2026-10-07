@@ -34,6 +34,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   Sun,
+  WalletCards,
   Waves,
   X,
 } from "lucide-react";
@@ -217,9 +218,11 @@ export default function App() {
     [waterBalanceOpen, setWaterBalanceOpen] = useState(false),
     [nrwSimulatorOpen, setNrwSimulatorOpen] = useState(false),
     [plannerOpen, setPlannerOpen] = useState(false),
+    [tariffPanelOpen, setTariffPanelOpen] = useState(false),
     [plannerSelectedId, setPlannerSelectedId] = useState<string | null>(null),
     [daloyOpen, setDaloyOpen] = useState(false),
     [daloyQuestion, setDaloyQuestion] = useState("");
+  const [tariffDraft,setTariffDraft]=useState<{id:string;value:string}|null>(null);
   const closePlanner=useCallback(()=>setPlannerOpen(false),[]);
   useEffect(() => {
     document.body.dataset.appearance = appearance;
@@ -281,6 +284,16 @@ export default function App() {
   const baselineDemand = spatialMunicipality.demand.reduce((total, value) => total + value, 0);
   const waterStress = spatialResult.shortage <= .05 ? "Low" : spatialResult.shortage / Math.max(.1, spatialResult.demand) >= .2 ? "High" : "Moderate";
   const affordability = spatialResult.burden <= 3 ? "Low" : spatialResult.burden <= 5 ? "Moderate" : "High";
+  const tariffBands = (burden: number) => burden <= 3 ? {label:"Low",color:"#2b9d78"} : burden <= 5 ? {label:"Moderate",color:"#e2b13c"} : {label:"High",color:"#d95757"};
+  const tariffImpact = [
+    {key:"households",label:"Households",cost:spatialStorage.monthlyExpense,basis:`${money(16000)} average monthly income`,burden:spatialResult.burden},
+    {key:"school",label:"Schools",cost:spatialInput.price*140,basis:"140 m³/month · ₱650k operating budget",burden:spatialInput.price*140/650000*100},
+    {key:"health",label:"Health facilities",cost:spatialInput.price*100,basis:"100 m³/month · ₱900k operating budget",burden:spatialInput.price*100/900000*100},
+    {key:"government",label:"Government",cost:spatialInput.price*180,basis:"180 m³/month · ₱1.2m operating budget",burden:spatialInput.price*180/1200000*100},
+    {key:"business",label:"Business",cost:spatialInput.price*80,basis:"80 m³/month · ₱350k monthly revenue",burden:spatialInput.price*80/350000*100},
+    {key:"agriculture",label:"Agriculture & fisheries",cost:spatialInput.price*500,basis:"500 m³/month · ₱1.5m monthly value",burden:spatialInput.price*500/1500000*100},
+  ].map(item=>{const band=tariffBands(item.burden);return {...item,status:band.label,color:band.color};});
+  const tariffImpactColors = Object.fromEntries(tariffImpact.map(item=>[item.key,item.color]));
   const profileStats = [
     ["Modeled households", number(spatialResult.households), spatialResult.households === spatialMunicipality.households ? "DEMO INPUT" : "INCLUDES PLACED HOMES"],
     ["Baseline demand", `${number(baselineDemand)} ML/day`, "ESTIMATED"],
@@ -447,7 +460,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `DULOY-${scope}.csv`;
+    a.download = `DALOY-${scope}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     inform("Simulation results exported.");
@@ -471,7 +484,7 @@ export default function App() {
             <Droplets size={25} />
           </span>
           <span>
-            DULOY
+            DALOY
             <small>Samar Water Decision System</small>
           </span>
         </a>
@@ -794,14 +807,6 @@ export default function App() {
                           onChange={() => update({ supplementary: !p.supplementary })}
                         />
                         <Slider
-                          label="Service price"
-                          value={p.price}
-                          min={0}
-                          max={100}
-                          unit=" ₱/m³"
-                          onChange={(v) => update({ price: v })}
-                        />
-                        <Slider
                           label="Monthly household income"
                           value={p.income}
                           min={5000}
@@ -1100,7 +1105,7 @@ export default function App() {
                 <header className="planning-model-head">
                   <div>
                     <h2>{spatialMunicipality.name}</h2>
-                    <p>3D planning view <span>· illustrative model</span></p>
+                    <p>3D planning view <span>- illustrative model</span></p>
                     {exploreLayout === "planning-expanded" && <div className="planning-live-stats" aria-label={`${spatialMunicipality.name} live water status`}>
                       <span>Water stress <b className={`stress-${waterStress.toLowerCase()}`}>{waterStress}</b></span>
                       <span>NRW <b>{number(spatialInput.nrw)}%</b></span>
@@ -1109,7 +1114,30 @@ export default function App() {
                   </div>
                   <div className="planning-model-actions">
                     <button className="planner-launch" type="button" onClick={()=>{setPlannerSelectedId(null);setPlannerOpen(true);}}><Building2 size={15}/> Development planner{spatialDevelopments.length>0?<span>{spatialDevelopments.length}</span>:null}</button>
-                    <span className="planning-model-status"><span />Interactive model</span>
+                    <div className="tariff-control-wrap">
+                      <button className="tariff-launch" type="button" aria-expanded={tariffPanelOpen} aria-controls="main-tariff-control" onClick={() => setTariffPanelOpen(open => !open)}>
+                        <WalletCards size={15}/><span>Tariff</span><strong>₱{number(spatialInput.price)}/m³</strong>
+                      </button>
+                      {tariffPanelOpen && <div className="tariff-popover" id="main-tariff-control">
+                        <div className="tariff-popover-head"><div><strong>Water tariff</strong><small>Illustrative scenario assumption</small></div><button type="button" aria-label="Close tariff settings" onClick={() => setTariffPanelOpen(false)}><X size={15}/></button></div>
+                        <label className="tariff-price-field">
+                          <span>Tariff for {spatialMunicipality.name}</span>
+                          <div><input aria-label={`Tariff price for ${spatialMunicipality.name}`} type="number" min="0" max="100" step="0.01" value={tariffDraft?.id===spatialMunicipality.id?tariffDraft.value:spatialInput.price} onChange={event=>{const raw=event.currentTarget.value;setTariffDraft({id:spatialMunicipality.id,value:raw});const value=Number(raw);if(raw!==""&&Number.isFinite(value)&&value>=0&&value<=100)updateMunicipal(spatialMunicipality.id,{price:value});}} onBlur={()=>{if(tariffDraft?.id===spatialMunicipality.id){const parsed=Number(tariffDraft.value);if(tariffDraft.value!==""&&Number.isFinite(parsed))updateMunicipal(spatialMunicipality.id,{price:Math.max(0,Math.min(100,parsed))});setTariffDraft(null);}}}/><span>₱/m³</span></div>
+                          <small>Enter a price from ₱0 to ₱100 per m³.</small>
+                        </label>
+                        <section className={`tariff-model-legend tariff-pressure-${affordability.toLowerCase()}`} aria-label="Tariff impact on model buildings">
+                          <div className="tariff-affordability-head"><span>Affordability by establishment</span><strong>{affordability} household burden: {number(spatialResult.burden)}%</strong></div>
+                          <div className="tariff-impact-list">
+                            {tariffImpact.map(item=><div className="tariff-impact-row" key={item.key}>
+                              <i style={{background:item.color}}/><span>{item.label}</span><strong>{number(item.burden)}% · {item.status}</strong>
+                              <small>{money(item.cost)}/month · {item.basis}</small>
+                            </div>)}
+                          </div>
+                          <div className="tariff-affordability-stats"><span>Household water cost <strong>{money(spatialStorage.monthlyExpense)}/month</strong></span><span>Burden bands <strong>Low ≤3% · Moderate ≤5% · High &gt;5%</strong></span></div>
+                          <small>Map colors use separate illustrative water-use and budget assumptions for each establishment type.</small>
+                        </section>
+                      </div>}
+                    </div>
                     <button className="icon-button" type="button" aria-label={exploreLayout === "planning-expanded" ? "Return to split view" : "Expand 3D planning view"} onClick={() => setExploreLayout(exploreLayout === "planning-expanded" ? "split" : "planning-expanded")}>
                       {exploreLayout === "planning-expanded" ? <Minimize2 size={16}/> : <Maximize2 size={16}/>}
                     </button>
@@ -1121,6 +1149,8 @@ export default function App() {
                     municipality={spatialMunicipality.name}
                     drought={spatialInput.drought}
                     nrw={spatialInput.nrw}
+                    showTariffPressure={tariffPanelOpen}
+                    tariffImpactColors={tariffImpactColors}
                     sectors={spatialDemands}
                     developments={spatialDevelopments}
                     onSelectDevelopment={id=>{setPlannerSelectedId(id);setPlannerOpen(true);}}
@@ -1588,9 +1618,9 @@ export default function App() {
           </span>
         </footer>
       </main>
-      {page === "Simulation" && <aside className={`daloy-assistant ${daloyOpen ? "open" : ""}`} aria-label="DULOY AI scenario assistant">
+      {page === "Simulation" && <aside className={`daloy-assistant ${daloyOpen ? "open" : ""}`} aria-label="DALOY AI scenario assistant">
         {daloyOpen && <section className="daloy-panel">
-          <header><span><Sparkles size={15}/> DULOY AI <small>LIVE SCENARIO READING</small></span><button className="icon-button" aria-label="Close DULOY AI" onClick={() => setDaloyOpen(false)}><X size={17}/></button></header>
+          <header><span><Sparkles size={15}/> DALOY AI <small>LIVE SCENARIO READING</small></span><button className="icon-button" aria-label="Close DALOY AI" onClick={() => setDaloyOpen(false)}><X size={17}/></button></header>
           <p className="daloy-prompt">Ask about {spatialMunicipality.name}</p>
           <div className="daloy-questions">{daloyQuestions.map((question) => <button key={question} className={daloyQuestion === question ? "selected" : ""} onClick={() => selectDaloyQuestion(question)}>{question}<ArrowRight size={13}/></button>)}</div>
           {daloyQuestion && <div className="daloy-answer" aria-live="polite">
@@ -1608,7 +1638,7 @@ export default function App() {
             <small>Computed directly from the current scenario inputs; no extra AI estimate.</small>
           </div>}
         </section>}
-        <button className="daloy-launcher" onClick={() => setDaloyOpen((open) => !open)} aria-expanded={daloyOpen} aria-label={daloyOpen ? "Close scenario interpretation" : "Interpret scenario with DULOY AI"}><Sparkles size={16}/>{daloyOpen ? "Close interpretation" : "Interpret scenario"}</button>
+        <button className="daloy-launcher" onClick={() => setDaloyOpen((open) => !open)} aria-expanded={daloyOpen} aria-label={daloyOpen ? "Close scenario interpretation" : "Interpret scenario with DALOY AI"}><Sparkles size={16}/>{daloyOpen ? "Close interpretation" : "Interpret scenario"}</button>
       </aside>}
       {notice && (
         <div className="toast" role="status">

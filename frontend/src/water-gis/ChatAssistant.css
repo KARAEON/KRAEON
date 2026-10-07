@@ -20,6 +20,7 @@
   min-height:58px; padding:0 14px;
   background:#10191e; border-bottom:1px solid #26343b;
 }
+.daloy-header-actions { display:flex; align-items:center; gap:4px; }
 .daloy-brand { display:flex; align-items:center; gap:9px; }
 .daloy-mark {
   width:30px; height:30px; display:grid; place-items:center;
@@ -35,6 +36,16 @@
   color:#84949c; background:transparent; border:1px solid transparent;
   border-radius:6px; cursor:pointer;
 }
+.daloy-panel-control {
+  width:30px; height:30px; display:grid; place-items:center;
+  color:#84949c; background:transparent; border:1px solid transparent;
+  border-radius:6px; cursor:pointer;
+}
+.daloy-panel-control:hover,
+.daloy-panel-control[aria-pressed="true"] {
+  color:#d8e3e7; background:#172127; border-color:#2b3940;
+}
+.daloy-panel-control:disabled { opacity:.4; cursor:default; }
 .daloy-close:hover { color:#d8e3e7; background:#172127; border-color:#2b3940; }
 .daloy-context {
   display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -95,25 +106,6 @@
   0%,70%,100%{opacity:.35; transform:translateY(0)}
   35%{opacity:1; transform:translateY(-2px)}
 }
-.daloy-tools {
-  padding:9px 10px 10px; background:#0f171b; border-top:1px solid #243138;
-}
-.daloy-tools-label {
-  margin-bottom:6px; color:#647680; font-size:7px; font-weight:800;
-  letter-spacing:.7px; text-transform:uppercase;
-}
-.daloy-quick-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
-.daloy-quick-grid button {
-  min-height:34px; display:flex; align-items:center; gap:6px;
-  padding:7px 8px; color:#8fa1aa; text-align:left;
-  background:#11191d; border:1px solid #29363d; border-radius:5px;
-  cursor:pointer; font-size:7px; line-height:1.2;
-}
-.daloy-quick-grid button:hover {
-  color:#d9e7ea; background:#142128; border-color:#365762;
-}
-.daloy-quick-grid button svg { flex:0 0 auto; color:#6ea7b5; }
-.daloy-quick-grid button:disabled { opacity:.45; cursor:wait; }
 .daloy-composer {
   display:flex; gap:7px; padding:10px;
   background:#10181d; border-top:1px solid #27343b;
@@ -150,6 +142,16 @@
     height:min(620px, calc(100vh - 16px)); border-radius:8px;
   }
   .daloy-launcher { right:12px; bottom:12px; }
+}
+
+.daloy-panel-half {
+  width:min(760px, calc(100vw - 28px));
+  height:min(820px, calc(100vh - 44px));
+}
+.daloy-panel-full {
+  top:0; right:auto; bottom:auto; left:0;
+  width:100vw; height:100vh; height:100dvh;
+  border-radius:0;
 }
 
 .daloy-suggestion {
@@ -260,6 +262,50 @@
   font-size: 6.5px;
   line-height: 1.35;
 }
+
+/* User-controlled message text sizing in the DALOY chat. */
+.daloy-header { position: relative; }
+.daloy-settings-popover {
+  position: absolute;
+  z-index: 4;
+  top: calc(100% + 8px);
+  right: 52px;
+  width: min(270px, calc(100vw - 40px));
+  padding: 14px;
+  color: #dce7eb;
+  background: #10191e;
+  border: 1px solid #34434a;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.32);
+}
+.daloy-settings-heading,
+.daloy-settings-range-labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.daloy-settings-heading { margin-bottom: 10px; font-size: 13px; }
+.daloy-settings-heading label { font-weight: 650; }
+.daloy-settings-heading output { color: #b991e2; font-weight: 750; }
+.daloy-settings-popover input[type="range"] {
+  display: block;
+  width: 100%;
+  min-height: 24px;
+  margin: 0;
+  accent-color: #9a5cda;
+  cursor: pointer;
+}
+.daloy-settings-range-labels { color: #a89bae; font-size: 11px; }
+.economic-theme .daloy-settings-popover {
+  color: #392d42;
+  background: #fff;
+  border-color: #e3d9e9;
+  box-shadow: 0 12px 30px rgba(44,28,58,.2);
+}
+.economic-theme .daloy-settings-heading output { color: #8050b2; }
+.economic-theme .daloy-settings-range-labels { color: #81768a; }
+.economic-theme .daloy-settings-popover input[type="range"] { accent-color: #8f55d2; }
 /* =========================================================
    DALOY READABILITY - SAFE VERSION
    Only increases readability.
@@ -288,7 +334,7 @@
 
 /* Main chat messages */
 .daloy-bubble {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.55;
   padding: 10px 12px;
 }
@@ -335,29 +381,92 @@
   line-height: 1.4;
 }
 
-/* Quick actions */
-.daloy-tools-label {
-  font-size: 8px;
-}
-
-.daloy-quick-grid button {
-  font-size: 9px;
-  min-height: 38px;
-  padding: 8px 9px;
-}
-
 /* Input box */
 .daloy-composer input {
-  font-size: 10px;
+  font-size: 11px;
   padding: 10px 11px;
 }
 
 .daloy-composer button {
-  font-size: 9px;
+  font-size: 10px;
 }
 
 /* Footer note */
 .daloy-footer-note {
-  font-size: 7.5px;
+  font-size: 8px;
   line-height: 1.45;
 }
+
+/* Larger chat modes use their extra space for readable content and controls. */
+.daloy-panel-half .daloy-header,
+.daloy-panel-full .daloy-header {
+  min-height: 72px;
+  padding: 0 20px;
+}
+.daloy-panel-half .daloy-brand strong,
+.daloy-panel-full .daloy-brand strong { font-size: 18px; }
+.daloy-panel-half .daloy-brand span,
+.daloy-panel-full .daloy-brand span { font-size: 11px; }
+.daloy-panel-half .daloy-mark,
+.daloy-panel-full .daloy-mark { width: 40px; height: 40px; }
+.daloy-panel-half .daloy-panel-control,
+.daloy-panel-half .daloy-close,
+.daloy-panel-full .daloy-panel-control,
+.daloy-panel-full .daloy-close { width: 42px; height: 42px; }
+.daloy-panel-half .daloy-header-actions,
+.daloy-panel-full .daloy-header-actions { gap: 8px; }
+.daloy-panel-half .daloy-context,
+.daloy-panel-full .daloy-context { padding: 14px 20px; gap: 14px; }
+.daloy-panel-half .daloy-context-location span,
+.daloy-panel-full .daloy-context-location span { font-size: 14px; }
+.daloy-panel-half .daloy-context-location small,
+.daloy-panel-full .daloy-context-location small { font-size: 11px; }
+.daloy-panel-half .daloy-context-badge,
+.daloy-panel-full .daloy-context-badge { padding: 7px 10px; font-size: 10px; }
+.daloy-panel-half .daloy-outage,
+.daloy-panel-full .daloy-outage { padding: 10px 20px; font-size: 11px; }
+.daloy-panel-half .daloy-messages,
+.daloy-panel-full .daloy-messages { padding: 22px 20px 16px; }
+.daloy-panel-half .daloy-message-row,
+.daloy-panel-full .daloy-message-row { gap: 10px; margin-bottom: 16px; }
+.daloy-panel-half .daloy-avatar,
+.daloy-panel-full .daloy-avatar { width: 32px; height: 32px; }
+.daloy-panel-half .daloy-bubble,
+.daloy-panel-full .daloy-bubble {
+  max-width: 88%;
+  padding: 13px 16px;
+  border-radius: 9px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.daloy-panel-half .daloy-message-content,
+.daloy-panel-full .daloy-message-content { gap: 8px; }
+.daloy-panel-half .daloy-composer,
+.daloy-panel-full .daloy-composer { gap: 10px; padding: 14px 16px; }
+.daloy-panel-half .daloy-composer input,
+.daloy-panel-full .daloy-composer input { min-height: 48px; padding: 12px 14px; border-radius: 8px; font-size: 16px; }
+.daloy-panel-half .daloy-composer button,
+.daloy-panel-full .daloy-composer button { min-height: 48px; padding: 0 18px; border-radius: 8px; font-size: 12px; }
+.daloy-panel-half .daloy-footer-note,
+.daloy-panel-full .daloy-footer-note { padding: 10px 14px; font-size: 10px; line-height: 1.5; }
+.daloy-panel-half .daloy-suggestion,
+.daloy-panel-full .daloy-suggestion { margin-left: 42px; padding: 14px; border-radius: 9px; }
+.daloy-panel-half .daloy-suggestion > div:first-child,
+.daloy-panel-full .daloy-suggestion > div:first-child { font-size: 12px; }
+.daloy-panel-half .daloy-change-list span,
+.daloy-panel-full .daloy-change-list span { font-size: 11px; }
+.daloy-panel-half .daloy-suggestion button,
+.daloy-panel-full .daloy-suggestion button { padding: 12px; font-size: 12px; }
+.daloy-panel-half .daloy-suggestion small,
+.daloy-panel-full .daloy-suggestion small { font-size: 10px; }
+.daloy-panel-half .daloy-preview,
+.daloy-panel-full .daloy-preview { margin-left: 42px; padding: 14px; border-radius: 9px; }
+.daloy-panel-half .daloy-preview-head,
+.daloy-panel-full .daloy-preview-head { font-size: 11px; }
+.daloy-panel-half .daloy-preview-row,
+.daloy-panel-full .daloy-preview-row { padding: 9px 0; font-size: 11px; }
+.daloy-panel-half .daloy-preview > small,
+.daloy-panel-full .daloy-preview > small { font-size: 10px; }
+
+.daloy-panel-full .daloy-bubble { font-size: 18px; }
+.daloy-panel-full .daloy-composer input { font-size: 18px; }
