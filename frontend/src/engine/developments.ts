@@ -193,6 +193,10 @@ export function developmentCostFields(template: AssetTemplate): AssetField[] {
   return [
     {key:"capexMillion",label:"Capital expenditure (CAPEX)",unit:"₱ million",min:0,max:100000,step:1,initial:defaults.capex},
     {key:"annualOpexMillion",label:"Annual operating expenditure (OPEX)",unit:"₱ million/year",min:0,max:10000,step:0.1,initial:defaults.annualOpex},
+    {key:"usefulLifeYears",label:"Useful life",unit:"years",min:1,max:100,initial:15},
+    {key:"equityScore",label:"Equity score",unit:"0–100 · GIS default 50",min:0,max:100,initial:50},
+    {key:"economicBenefitScore",label:"Economic / livelihood score",unit:"0–100 · GIS default 50",min:0,max:100,initial:50},
+    {key:"reliabilityScore",label:"Reliability score",unit:"0–100 · GIS default 50",min:0,max:100,initial:50},
   ];
 }
 
@@ -225,13 +229,78 @@ export function calculateInfrastructureImpact(development: Pick<Development,"tem
 
 export function developmentFinancials(development: Pick<Development,"templateId" | "inputs">) {
   const template=assetTemplateById[development.templateId];
-  if(!template) return {capexMillion:0,annualOpexMillion:0};
+  if(!template) return {capexMillion:0,annualOpexMillion:0,usefulLifeYears:15,equityScore:50,economicBenefitScore:50,reliabilityScore:50};
   const fields=developmentCostFields(template);
   const read=(field:AssetField)=>{
     const raw=development.inputs[field.key];
     return Number.isFinite(raw)?Math.max(field.min,Math.min(field.max,raw)):field.initial;
   };
-  return {capexMillion:read(fields[0]),annualOpexMillion:read(fields[1])};
+  return {
+    capexMillion:read(fields[0]!),
+    annualOpexMillion:read(fields[1]!),
+    usefulLifeYears:read(fields[2]!),
+    equityScore:read(fields[3]!),
+    economicBenefitScore:read(fields[4]!),
+    reliabilityScore:read(fields[5]!),
+  };
+}
+
+export type InterventionValuation = {
+  capexPhp:number;
+  annualOpexPhp:number;
+  usefulLifeYears:number;
+  waterGainM3PerDay:number;
+  householdsBenefited:number;
+};
+
+/** Mirrors GIS InterventionValuationService's simple, undiscounted valuation. */
+export function calculateInterventionValuation(input:InterventionValuation) {
+  const capex=Math.max(0,input.capexPhp);
+  const annualOpex=Math.max(0,input.annualOpexPhp);
+  const usefulLifeYears=Math.max(1,Math.trunc(input.usefulLifeYears));
+  const waterGainM3PerDay=Math.max(0,input.waterGainM3PerDay);
+  const householdsBenefited=Math.max(0,Math.trunc(input.householdsBenefited));
+  const simpleLifecycleCostPhp=capex+annualOpex*usefulLifeYears;
+  const lifetimeWaterM3=waterGainM3PerDay*365*usefulLifeYears;
+  return {
+    simpleLifecycleCostPhp,
+    lifetimeWaterM3,
+    simpleLifecycleCostPerM3Php:lifetimeWaterM3>0?simpleLifecycleCostPhp/lifetimeWaterM3:null,
+    capexPerHouseholdPhp:householdsBenefited>0?capex/householdsBenefited:null,
+    economicLossAvoidedPhpYear:null,
+  };
+}
+
+export type BenefitPerPesoProject = InterventionValuation & {
+  id:string;
+  name:string;
+  equityScore:number;
+  economicBenefitScore:number;
+  reliabilityScore:number;
+};
+
+/** Mirrors GIS PublicBenefitPerPesoService's default normalized 0–100 ranking. */
+export function calculateBenefitPerPeso(projects:BenefitPerPesoProject[]) {
+  if(projects.length===0)return [];
+  const valuations=projects.map(project=>calculateInterventionValuation(project));
+  const maxWaterGain=Math.max(...projects.map(project=>Math.max(0,project.waterGainM3PerDay)));
+  const validCosts=valuations.map(value=>value.simpleLifecycleCostPerM3Php).filter((value):value is number=>value!==null&&value>0);
+  const minCost=validCosts.length?Math.min(...validCosts):null;
+  return projects.map((project,index)=>{
+    const valuation=valuations[index];
+    const waterBenefit=maxWaterGain>0?Math.max(0,project.waterGainM3PerDay)/maxWaterGain*100:0;
+    const equity=Math.max(0,Math.min(100,project.equityScore));
+    const economic=Math.max(0,Math.min(100,project.economicBenefitScore));
+    const reliability=Math.max(0,Math.min(100,project.reliabilityScore));
+    const cost=valuation.simpleLifecycleCostPerM3Php;
+    const costEfficiency=minCost!==null&&cost!==null&&cost>0?Math.min(100,minCost/cost*100):0;
+    return {
+      id:project.id,
+      valuation,
+      subscores:{waterBenefit,equity,economicLivelihood:economic,reliability,costEfficiency},
+      publicBenefitScore:waterBenefit*.30+equity*.25+economic*.20+reliability*.15+costEfficiency*.10,
+    };
+  }).sort((a,b)=>b.publicBenefitScore-a.publicBenefitScore).map((project,index)=>({...project,rank:index+1}));
 }
 export function validDevelopment(value: unknown): value is Development {
   if(!value || typeof value!=="object") return false;

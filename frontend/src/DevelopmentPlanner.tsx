@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, Droplets, Grip, Plus, Save, Search, Trash2, X } from "lucide-react";
 import CityMaquette from "./CityMaquette";
-import { assetTemplateById, assetTemplates, calculateDevelopmentDemand, calculateInfrastructureImpact, defaultDevelopmentInputs, developmentCostFields, developmentFinancials, type Development, type DevelopmentStatus } from "./engine/developments";
+import { assetTemplateById, assetTemplates, calculateBenefitPerPeso, calculateDevelopmentDemand, calculateInfrastructureImpact, calculateInterventionValuation, defaultDevelopmentInputs, developmentCostFields, developmentFinancials, type BenefitPerPesoProject, type Development, type DevelopmentStatus } from "./engine/developments";
 import { sectorNames, simulate, type Municipality, type Result, type Scenario } from "./engine/simulation";
 
 const format = (value:number,digits=2)=>value.toLocaleString("en-US",{maximumFractionDigits:digits});
@@ -44,12 +44,12 @@ export default function DevelopmentPlanner({ municipality, scenario, result, dev
   const nrwRecoveredPoints=Math.max(0,(baseEffectiveNrw-scenarioEffectiveNrw)*100);
   const selectedInfrastructureImpact=calculateInfrastructureImpact({templateId,inputs},scenario.inputs[municipality.id].drought);
   const selectedInfrastructureIsSupply=Boolean(template.addedSupplyMlDay);
+  const candidate:Development=selected
+    ? {...selected,inputs:{...inputs},active:true}
+    : {id:"asset-impact-preview",municipalityId:municipality.id,templateId,position:[0,0],inputs:{...inputs},status:"proposed",active:true};
   const assetImpactPreview=useMemo(()=>{
     const otherMunicipalities=(scenario.developments || []).filter(item=>item.municipalityId!==municipality.id);
     const planWithoutAsset=[...otherMunicipalities,...developments.filter(item=>item.id!==selected?.id)];
-    const candidate:Development=selected
-      ? {...selected,inputs:{...inputs},active:true}
-      : {id:"asset-impact-preview",municipalityId:municipality.id,templateId,position:[0,0],inputs:{...inputs},status:"proposed",active:true};
     const baseline=simulate({...scenario,developments:planWithoutAsset},municipality.id);
     const withAsset=simulate({...scenario,developments:[...planWithoutAsset,candidate]},municipality.id);
     return {
@@ -60,7 +60,43 @@ export default function DevelopmentPlanner({ municipality, scenario, result, dev
       shortageDelta:withAsset.shortage-baseline.shortage,
       endingDelta:withAsset.ending-baseline.ending,
     };
-  },[scenario,municipality.id,developments,selected,inputs,templateId]);
+  },[scenario,municipality.id,developments,selected,inputs,templateId,candidate]);
+  const benefitPreview=useMemo(()=>{
+    if(template.sector!==null)return null;
+    const portfolio:Development[]=[
+      ...developments.filter(item=>item.active&&item.id!==selected?.id&&assetTemplateById[item.templateId].sector===null),
+      candidate,
+    ];
+    const projects:BenefitPerPesoProject[]=portfolio.map(asset=>{
+      const otherMunicipalities=(scenario.developments || []).filter(item=>item.municipalityId!==municipality.id);
+      const without=[...otherMunicipalities,...developments.filter(item=>item.id!==asset.id)];
+      const before=simulate({...scenario,developments:without},municipality.id);
+      const after=simulate({...scenario,developments:[...without,asset]},municipality.id);
+      const financials=developmentFinancials(asset);
+      return {
+        id:asset.id,
+        name:assetTemplateById[asset.templateId].name,
+        capexPhp:financials.capexMillion*1_000_000,
+        annualOpexPhp:financials.annualOpexMillion*1_000_000,
+        usefulLifeYears:financials.usefulLifeYears,
+        waterGainM3PerDay:Math.max(0,after.allocable-before.allocable)*1000,
+        householdsBenefited:Math.max(0,before.affected-after.affected),
+        equityScore:financials.equityScore,
+        economicBenefitScore:financials.economicBenefitScore,
+        reliabilityScore:financials.reliabilityScore,
+      };
+    });
+    return calculateBenefitPerPeso(projects).find(item=>item.id===candidate.id) || null;
+  },[scenario,municipality.id,developments,selected,candidate,template.sector]);
+  const candidateFinancials=developmentFinancials(candidate);
+  const candidateHouseholdBenefit=Math.max(0,assetImpactPreview.baseline.affected-assetImpactPreview.withAsset.affected);
+  const candidateValuation=calculateInterventionValuation({
+    capexPhp:candidateFinancials.capexMillion*1_000_000,
+    annualOpexPhp:candidateFinancials.annualOpexMillion*1_000_000,
+    usefulLifeYears:candidateFinancials.usefulLifeYears,
+    waterGainM3PerDay:Math.max(0,assetImpactPreview.allocableDelta)*1000,
+    householdsBenefited:candidateHouseholdBenefit,
+  });
   const sectorData=sectorNames.map((name,index)=>({name,value:result.demands[index],allocation:result.allocations[index],coverage:result.coverage[index],excess:result.excessAllocations[index],unmet:result.unmetBySector[index],color:["#249f9a","#5e9a55","#df9a35","#6673d3"][index]}));
 
   useEffect(()=>{
@@ -150,11 +186,22 @@ export default function DevelopmentPlanner({ municipality, scenario, result, dev
                 <div><span>Unmet demand</span><strong>{format(assetImpactPreview.withAsset.shortage)} <small>ML/day</small></strong><em className={assetImpactPreview.shortageDelta<-.005?"positive":assetImpactPreview.shortageDelta>0.005?"negative":""}>{signedChange(assetImpactPreview.shortageDelta)}</em></div>
                 <div><span>Closing storage</span><strong>{format(assetImpactPreview.withAsset.ending)} <small>ML</small></strong><em className={assetImpactPreview.endingDelta>0.005?"positive":assetImpactPreview.endingDelta<-.005?"negative":""}>{`${assetImpactPreview.endingDelta>0.005?"+":""}${format(assetImpactPreview.endingDelta)} ML`}</em></div>
               </div>
+              <dl className="development-asset-financials">
+                <div><dt>Asset CAPEX</dt><dd>₱{format(candidateFinancials.capexMillion,1)}M</dd></div>
+                <div><dt>Annual OPEX</dt><dd>₱{format(candidateFinancials.annualOpexMillion,1)}M/year</dd></div>
+                <div><dt>Simple lifecycle cost</dt><dd>₱{format(candidateValuation.simpleLifecycleCostPhp/1_000_000,1)}M · {candidateFinancials.usefulLifeYears} years</dd></div>
+                {candidateValuation.capexPerHouseholdPhp!==null&&<div><dt>CAPEX per household benefited</dt><dd>₱{format(candidateValuation.capexPerHouseholdPhp,0)}</dd></div>}
+                {template.sector===null&&<>
+                  <div><dt>Lifecycle cost per m³</dt><dd>{candidateValuation.simpleLifecycleCostPerM3Php===null?"N/A":`₱${format(candidateValuation.simpleLifecycleCostPerM3Php,2)}`}</dd></div>
+                  <div><dt>GIS benefit-per-peso score</dt><dd>{benefitPreview?`${format(benefitPreview.publicBenefitScore,1)}/100 · rank ${benefitPreview.rank}`:"N/A"}</dd></div>
+                </>}
+              </dl>
+              <p>Uses GIS’s simple lifecycle formula (CAPEX + annual OPEX × useful life). Infrastructure scores use GIS’s default 30/25/20/15/10 weights and compare infrastructure in this municipality’s current plan. A score is a comparison aid, not a project appraisal.</p>
               <p>Shows the illustrative balance with this asset included, compared with {selected?"the plan without this asset":"the current plan"}. It does not include a forecast.</p>
             </section>
             {selected?<div className="development-config-actions"><button type="button" onClick={()=>chooseTemplate(selected.templateId)}><Plus size={15}/> Add another</button><button type="button" className="remove" onClick={()=>{onChange(developments.filter(item=>item.id!==selected.id));setSelectedId(null);}}><Trash2 size={15}/> Remove</button></div>:<button type="button" className={`development-place-button${placing?" active":""}`} onClick={()=>template.placeable===false?addConfiguredAsset():setPlacing(value=>!value)}>{placing?<><Check size={16}/> Ready to place</>:<><Plus size={16}/> {template.placeable===false?"Add to plan":`Place ${template.name}`}</>}</button>}
           </section>
-          <section className="development-impact"><div className="development-pane-head"><h3>Live water impact</h3><Droplets size={16}/></div><dl><div><dt>Estimated baseline demand</dt><dd>{format(withoutDevelopments.demand)} ML/day</dd></div><div className="added"><dt>Development demand</dt><dd>+{format(addedDemand)} ML/day</dd></div><div className="total"><dt>New estimated demand</dt><dd>{format(result.demand)} ML/day</dd></div><div><dt>Allocable water</dt><dd>{format(result.allocable)} ML/day</dd></div>{infrastructureSupplyAdded>.005&&<div><dt>Added infrastructure supply</dt><dd>+{format(infrastructureSupplyAdded)} ML/day</dd></div>}{nrwRecoveredPoints>.05&&<div><dt>Distribution losses recovered</dt><dd>{format(nrwRecoveredPoints,1)} NRW points</dd></div>}<div><dt>Unmet estimated demand</dt><dd className={result.shortage>.05?"at-risk":""}>{format(result.shortage)} ML/day</dd></div><div><dt>Closing storage</dt><dd>{format(result.ending)} ML</dd></div>{result.households!==withoutDevelopments.households && <div><dt>Modeled households</dt><dd>{format(result.households,0)}</dd></div>}<div><dt>Households with unmet needs</dt><dd>{format(result.affected,0)}</dd></div><div className="total financial-metric"><dt>Total CAPEX</dt><dd>₱{format(totalCapexMillion,1)}M</dd></div><div className="financial-metric"><dt>Annual OPEX</dt><dd>₱{format(annualOpexMillion,1)}M/year</dd></div></dl><p className={`development-impact-summary${result.shortage>.05?" at-risk":""}`}>{result.shortage>.05?`${format(result.shortage)} ML/day of estimated demand cannot be covered under this scenario.`:`Current supply and usable storage cover the estimated demand.`}</p></section>
+          <section className="development-impact"><div className="development-pane-head"><h3>Live water impact</h3><Droplets size={16}/></div><dl><div><dt>Estimated baseline demand</dt><dd>{format(withoutDevelopments.demand)} ML/day</dd></div><div className="added"><dt>Development demand</dt><dd>+{format(addedDemand)} ML/day</dd></div><div className="total"><dt>New estimated demand</dt><dd>{format(result.demand)} ML/day</dd></div><div><dt>Allocable water</dt><dd>{format(result.allocable)} ML/day</dd></div>{infrastructureSupplyAdded>.005&&<div><dt>Added infrastructure supply</dt><dd>+{format(infrastructureSupplyAdded)} ML/day</dd></div>}{nrwRecoveredPoints>.05&&<div><dt>Distribution losses recovered</dt><dd>{format(nrwRecoveredPoints,1)} NRW points</dd></div>}<div><dt>Unmet estimated demand</dt><dd className={result.shortage>.05?"at-risk":""}>{format(result.shortage)} ML/day</dd></div><div><dt>Closing storage</dt><dd>{format(result.ending)} ML</dd></div>{result.households!==withoutDevelopments.households && <div><dt>Modeled households</dt><dd>{format(result.households,0)}</dd></div>}<div><dt>Households with unmet needs</dt><dd>{format(result.affected,0)}</dd></div><div className="total financial-metric"><dt>Current plan CAPEX</dt><dd>₱{format(totalCapexMillion,1)}M</dd></div><div className="financial-metric"><dt>Current plan annual OPEX</dt><dd>₱{format(annualOpexMillion,1)}M/year</dd></div></dl><p className={`development-impact-summary${result.shortage>.05?" at-risk":""}`}>{result.shortage>.05?`${format(result.shortage)} ML/day of estimated demand cannot be covered under this scenario.`:`Current supply and usable storage cover the estimated demand.`}</p></section>
           <div className="development-status-key"><span><i className="status-proposed"/>Proposed</span><span><i className="status-approved"/>Approved</span><span><i className="status-existing"/>Existing</span></div>
 
           <button type="button" className="development-return" onClick={onClose}>Return to simulation <ArrowRight size={16}/></button>

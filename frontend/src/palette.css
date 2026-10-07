@@ -978,6 +978,9 @@ body:has(.tariff-popover) .daloy-assistant:not(.open) .daloy-launcher{display:no
 .development-asset-preview-grid em{display:block;margin-top:1px;color:#6b6170;font-size:calc(10px * var(--ui-text-scale,1));font-style:normal;font-variant-numeric:tabular-nums}
 .development-asset-preview-grid em.positive{color:#287548}.development-asset-preview-grid em.negative{color:#a95c62}
 .development-asset-preview>p{margin:5px 0 0;color:#685e6d;font-size:calc(10px * var(--ui-text-scale,1));line-height:1.45}
+.development-asset-financials{margin:8px 0 4px;padding-top:5px;border-top:1px solid #eee9f0}
+.development-asset-financials>div{display:flex;justify-content:space-between;gap:8px;padding:4px 0;font-size:calc(10px * var(--ui-text-scale,1))}
+.development-asset-financials dt{color:#685e6d}.development-asset-financials dd{margin:0;color:#332b38;font-weight:700;text-align:right}
 .topbar .brand-icon{position:relative;width:40px;height:40px;padding:0;overflow:hidden;border-radius:10px;background:#fff}
 .topbar .brand-icon img{position:absolute;top:0;left:50%;display:block;width:140%;height:104%;max-width:none;object-fit:fill;transform:translateX(-50%)}
 .topbar .brand-wordmark{color:#347fb8}

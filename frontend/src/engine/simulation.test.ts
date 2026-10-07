@@ -1,7 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {baseline,simulate,municipalities} from './simulation';
-import { assetTemplateById, calculateDevelopmentDemand, defaultDevelopmentInputs, type Development } from './developments';
+import { assetTemplateById, calculateBenefitPerPeso, calculateDevelopmentDemand, calculateInterventionValuation, defaultDevelopmentInputs, type BenefitPerPesoProject, type Development } from './developments';
+test('planner intervention valuation matches GIS simple lifecycle calculations',()=>{
+  const result=calculateInterventionValuation({capexPhp:100000,annualOpexPhp:1000,usefulLifeYears:10,waterGainM3PerDay:10,householdsBenefited:100});
+  assert.equal(result.simpleLifecycleCostPhp,110000);
+  assert.equal(result.lifetimeWaterM3,36500);
+  assert.ok(Math.abs((result.simpleLifecycleCostPerM3Php||0)-110000/36500)<1e-12);
+  assert.equal(result.capexPerHouseholdPhp,1000);
+  assert.equal(result.economicLossAvoidedPhpYear,null);
+  assert.equal(calculateInterventionValuation({capexPhp:100,annualOpexPhp:0,usefulLifeYears:15,waterGainM3PerDay:0,householdsBenefited:0}).simpleLifecycleCostPerM3Php,null);
+});
+test('planner benefit-per-peso uses GIS default weights and ranks the portfolio',()=>{
+  const projects:BenefitPerPesoProject[]=[
+    {id:'a',name:'A',capexPhp:100000,annualOpexPhp:1000,usefulLifeYears:10,waterGainM3PerDay:10,householdsBenefited:5,equityScore:50,economicBenefitScore:50,reliabilityScore:50},
+    {id:'b',name:'B',capexPhp:100000,annualOpexPhp:1000,usefulLifeYears:10,waterGainM3PerDay:20,householdsBenefited:10,equityScore:50,economicBenefitScore:50,reliabilityScore:50},
+  ];
+  const result=calculateBenefitPerPeso(projects);
+  assert.equal(result[0].id,'b');
+  assert.equal(result[0].rank,1);
+  assert.equal(result[0].publicBenefitScore,70);
+  assert.equal(result[1].publicBenefitScore,50);
+});
 import { migrateScenario, readSavedScenarios, persistSavedScenarios, scenarioStorageKey, scenarioBackupKey } from './scenarios';
 test('baseline includes the configured protected reserve in closing storage',()=>{const r=simulate(baseline());assert.equal(r.supply,76);assert.equal(r.demand,85);assert.equal(r.results.length,3);assert.equal(r.gap,9);assert.ok(Math.abs(r.ending-17.6)<1e-8);});
 test('drought, supplementary supply, and allocation obey daily physical mass balance',()=>{for(let drought=0;drought<=100;drought+=10)for(const allocation of [0,50,100]){const s=baseline();for(const p of Object.values(s.inputs)){p.drought=drought;p.allocation=allocation;p.protect=true;p.allocationShares=[55,20,15,10];}for(const r of simulate(s).results){assert.ok(r.ending>=0&&r.ending<=r.capacity);assert.ok(Math.abs(r.opening+r.supply-r.allocation/(1-r.nrw)-r.ending-r.spill)<1e-8);r.coverage.forEach(c=>assert.ok(c>=0&&c<=1.000001));assert.ok(r.allocation<=r.demand+1e-8);}}});
